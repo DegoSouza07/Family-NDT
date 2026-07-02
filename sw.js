@@ -1,66 +1,41 @@
-// PrimoBytes — Service Worker
-const CACHE_NAME = 'primobytes-v1'
-const ASSETS = [
-  '/Family-NDT/',
-  '/Family-NDT/index.html',
-  '/Family-NDT/style.css',
-  '/Family-NDT/manifest.json',
-  '/Family-NDT/icons/icon-192.png',
-  '/Family-NDT/icons/icon-512.png',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js',
-]
+// PrimoBytes Service Worker v2
+const CACHE = 'primobytes-v2'
 
-// Instala e cacheia assets estáticos
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
-  )
+  self.skipWaiting()
 })
 
-// Ativa e remove caches antigos
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   )
 })
 
-// Estratégia: Network first para Supabase, Cache first para assets
 self.addEventListener('fetch', e => {
+  // Supabase e CDN — sempre rede
   const url = new URL(e.request.url)
-
-  // Supabase sempre via rede (dados em tempo real)
-  if (url.hostname.includes('supabase.co')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('{}', { headers: { 'Content-Type': 'application/json' } })))
+  if (url.hostname.includes('supabase.co') ||
+      url.hostname.includes('jsdelivr.net') ||
+      url.hostname.includes('googleapis.com') ||
+      url.hostname.includes('gstatic.com')) {
+    e.respondWith(fetch(e.request))
     return
   }
 
-  // Assets: cache first, network fallback
+  // Demais recursos — network first, cache fallback
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached
-      return fetch(e.request).then(response => {
-        // Cacheia apenas respostas válidas
-        if (response && response.status === 200 && response.type === 'basic') {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone))
+    fetch(e.request)
+      .then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone()
+          caches.open(CACHE).then(c => c.put(e.request, clone))
         }
-        return response
-      }).catch(() => {
-        // Offline fallback para navegação
-        if (e.request.mode === 'navigate') {
-          return caches.match('/Family-NDT/index.html')
-        }
+        return res
       })
-    })
+      .catch(() => caches.match(e.request)
+        .then(cached => cached || caches.match('/Family-NDT/index.html'))
+      )
   )
-})
-
-// Mensagem para forçar atualização
-self.addEventListener('message', e => {
-  if (e.data === 'skipWaiting') self.skipWaiting()
 })
