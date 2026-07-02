@@ -1,0 +1,3718 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>PrimoBytes</title>
+  <meta name="theme-color" content="#12141c" />
+  <meta name="description" content="Hub de jogos da família — 7 jogos online com seus primos!" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PrimoBytes" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Supabase SDK via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     TELA: LOGIN
+══════════════════════════════════════ -->
+<div id="login-screen" class="screen active">
+  <div class="login-wrap">
+    <div class="logo-area">
+      <div class="logo-icon">🎮</div>
+      <h1 class="logo-title">PrimoBytes</h1>
+      <p class="logo-sub">O hub de jogos da família</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuth('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchAuth('cadastro')">Cadastrar</button>
+    </div>
+    <form id="form-login" class="login-form" style="display:flex" onsubmit="handleLogin(event)">
+      <div class="field-group">
+        <label class="field-label">E-mail</label>
+        <div class="field-wrap">
+          <span class="field-icon">✉️</span>
+          <input class="field-input" type="email" id="login-email" placeholder="seu@email.com" required />
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Senha</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input class="field-input" type="password" id="login-senha" placeholder="••••••••" required />
+        </div>
+      </div>
+      <p id="login-error" class="form-error hidden"></p>
+      <button type="submit" class="btn-primary">Entrar no Hub</button>
+    </form>
+    <form id="form-cadastro" class="login-form" style="display:none" onsubmit="handleCadastro(event)">
+      <div class="field-group">
+        <label class="field-label">Seu apelido</label>
+        <div class="field-wrap">
+          <span class="field-icon">😎</span>
+          <input class="field-input" type="text" id="cad-nome" placeholder="Ex: Deguinho" required />
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">E-mail</label>
+        <div class="field-wrap">
+          <span class="field-icon">✉️</span>
+          <input class="field-input" type="email" id="cad-email" placeholder="seu@email.com" required />
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Senha (mín. 6 caracteres)</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input class="field-input" type="password" id="cad-senha" placeholder="••••••••" minlength="6" required />
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Escolha seu avatar</label>
+        <div class="avatar-picker">
+          <button type="button" class="avatar-opt selected" onclick="selectAvatar(this)">😎</button>
+          <button type="button" class="avatar-opt" onclick="selectAvatar(this)">🤩</button>
+          <button type="button" class="avatar-opt" onclick="selectAvatar(this)">🥳</button>
+          <button type="button" class="avatar-opt" onclick="selectAvatar(this)">😈</button>
+          <button type="button" class="avatar-opt" onclick="selectAvatar(this)">🦊</button>
+          <button type="button" class="avatar-opt" onclick="selectAvatar(this)">🐲</button>
+          <button type="button" class="avatar-opt" onclick="selectAvatar(this)">🎃</button>
+          <button type="button" class="avatar-opt" onclick="selectAvatar(this)">🤖</button>
+        </div>
+      </div>
+      <p id="cad-error" class="form-error hidden"></p>
+      <button type="submit" class="btn-primary">Criar Conta</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════ -->
+<div id="app-shell" class="screen hidden">
+  <header class="app-header">
+    <div class="user-info">
+      <div class="avatar-wrap">
+        <span class="avatar-emoji" id="hdr-avatar">😎</span>
+        <span class="level-badge" id="hdr-level">Nv.1</span>
+      </div>
+      <div class="user-text">
+        <span class="user-name" id="hdr-name">Primo</span>
+        <span class="user-level" id="hdr-rank">🟢 Novato</span>
+      </div>
+    </div>
+    <div class="byts-badge">
+      <span class="byts-coin">🪙</span>
+      <span class="byts-amount" id="hdr-byts">0</span>
+      <span class="byts-label">Byts</span>
+    </div>
+  </header>
+
+  <!-- TAB: JOGOS -->
+  <main class="app-main" id="main-jogos">
+    <section class="quick-actions">
+      <button class="action-card action-create" onclick="showTab('lobby')">
+        <span class="action-icon">🎮</span>
+        <span class="action-title">Criar Sala</span>
+        <span class="action-sub">Escolha um jogo</span>
+      </button>
+      <button class="action-card action-join" onclick="showTab('lobby')">
+        <span class="action-icon">🔑</span>
+        <span class="action-title">Usar Código</span>
+        <span class="action-sub">Entre na sala</span>
+      </button>
+    </section>
+    <section class="section">
+      <h2 class="section-title">Jogos Disponíveis</h2>
+      <div class="games-grid">
+        <button class="game-card active-game" onclick="openGame('tictactoe')">
+          <span class="game-emoji">❌</span>
+          <span class="game-name">Jogo da Velha</span>
+          <span class="game-tag tag-play">🌐 Online</span>
+        </button>
+        <button class="game-card active-game" onclick="openGame('rockpaper')">
+          <span class="game-emoji">✊</span>
+          <span class="game-name">Pedra Papel Tesoura</span>
+          <span class="game-tag tag-play">🌐 Online</span>
+        </button>
+        <button class="game-card active-game" onclick="openGame('truthdare')">
+          <span class="game-emoji">🎭</span>
+          <span class="game-name">Verdade ou Desafio</span>
+          <span class="game-tag tag-play">🌐 Online</span>
+        </button>
+        <button class="game-card active-game" onclick="openGame('domino')">
+          <span class="game-emoji">🁣</span>
+          <span class="game-name">Dominó</span>
+          <span class="game-tag tag-play">🌐 Online</span>
+        </button>
+        <button class="game-card active-game" onclick="openGame('checkers')">
+          <span class="game-emoji">🔴</span>
+          <span class="game-name">Dama</span>
+          <span class="game-tag tag-play">🌐 Online</span>
+        </button>
+        <button class="game-card coming-soon" disabled>
+          <span class="game-emoji">🃏</span>
+          <span class="game-name">Uno</span>
+          <span class="game-tag tag-soon">Em Breve</span>
+        </button>
+        <button class="game-card active-game" onclick="openGame('chess')">
+          <span class="game-emoji">♟️</span>
+          <span class="game-name">Xadrez</span>
+          <span class="game-tag tag-play">🌐 Online</span>
+        </button>
+        <button class="game-card active-game" onclick="openGame('penalty')">
+          <span class="game-emoji">⚽</span>
+          <span class="game-name">Desafio de Pênaltis</span>
+          <span class="game-tag tag-play">🌐 Online</span>
+        </button>
+        <button class="game-card coming-soon" disabled>
+          <span class="game-emoji">➕</span>
+          <span class="game-name">Mais Jogos</span>
+          <span class="game-tag tag-soon">Em Breve</span>
+        </button>
+      </div>
+    </section>
+    <div class="nav-spacer"></div>
+  </main>
+
+  <!-- TAB: LOBBY -->
+  <main class="app-main hidden" id="main-lobby">
+    <section class="section">
+      <h2 class="section-title">Entrar em Sala</h2>
+      <div class="code-input-wrap">
+        <input class="code-input" id="room-code-input" type="text" placeholder="CÓDIGO" maxlength="4" oninput="this.value=this.value.toUpperCase()" />
+        <button class="btn-secondary" onclick="joinRoomByCode()">Entrar</button>
+      </div>
+      <h2 class="section-title" style="margin-top:8px">Salas Abertas</h2>
+      <div class="rooms-list" id="rooms-list">
+        <div class="empty-state">Carregando salas... ⏳</div>
+      </div>
+    </section>
+    <div class="nav-spacer"></div>
+  </main>
+
+  <!-- TAB: LOJA -->
+  <main class="app-main hidden" id="main-loja">
+    <section class="section">
+      <h2 class="section-title">Loja de Brindes</h2>
+      <p class="section-sub">Troque seus Byts por recompensas reais!</p>
+      <ul class="rewards-list">
+        <li class="reward-item"><div class="reward-icon">🍽️</div><div class="reward-info"><span class="reward-title">Imunidade da Louça</span><span class="reward-desc">Livre-se da louça por 1 dia</span><div class="reward-cost"><span class="byts-coin">🪙</span><span class="reward-price">500 Byts</span></div></div><button class="btn-redeem" onclick="resgatar(this,500)">Resgatar</button></li>
+        <li class="reward-item"><div class="reward-icon">🍕</div><div class="reward-info"><span class="reward-title">Vale Pizza</span><span class="reward-desc">Uma pizza da sua escolha</span><div class="reward-cost"><span class="byts-coin">🪙</span><span class="reward-price">1.500 Byts</span></div></div><button class="btn-redeem" onclick="resgatar(this,1500)">Resgatar</button></li>
+        <li class="reward-item"><div class="reward-icon">🛋️</div><div class="reward-info"><span class="reward-title">Controle do Sofá</span><span class="reward-desc">Você escolhe o que assistir</span><div class="reward-cost"><span class="byts-coin">🪙</span><span class="reward-price">300 Byts</span></div></div><button class="btn-redeem" onclick="resgatar(this,300)">Resgatar</button></li>
+        <li class="reward-item"><div class="reward-icon">🧺</div><div class="reward-info"><span class="reward-title">Imunidade da Faxina</span><span class="reward-desc">Sem limpeza por 1 semana</span><div class="reward-cost"><span class="byts-coin">🪙</span><span class="reward-price">800 Byts</span></div></div><button class="btn-redeem" onclick="resgatar(this,800)">Resgatar</button></li>
+        <li class="reward-item"><div class="reward-icon">🎬</div><div class="reward-info"><span class="reward-title">Noite de Cinema</span><span class="reward-desc">Ingresso + pipoca para 2</span><div class="reward-cost"><span class="byts-coin">🪙</span><span class="reward-price">2.000 Byts</span></div></div><button class="btn-redeem" onclick="resgatar(this,2000)">Resgatar</button></li>
+        <li class="reward-item"><div class="reward-icon">🛵</div><div class="reward-info"><span class="reward-title">Vale Delivery</span><span class="reward-desc">Peça o que quiser até R$50</span><div class="reward-cost"><span class="byts-coin">🪙</span><span class="reward-price">1.200 Byts</span></div></div><button class="btn-redeem" onclick="resgatar(this,1200)">Resgatar</button></li>
+      </ul>
+    </section>
+    <div class="nav-spacer"></div>
+  </main>
+
+  <!-- TAB: PERFIL -->
+  <main class="app-main hidden" id="main-perfil">
+    <section class="section">
+      <div class="profile-card">
+        <div class="profile-avatar-big" id="profile-big-avatar">😎</div>
+        <div class="profile-info">
+          <h2 class="profile-name" id="profile-name">Primo</h2>
+          <span class="profile-rank-badge" id="profile-rank-badge">Novato</span>
+        </div>
+        <div class="profile-stats">
+          <div class="stat-box"><span class="stat-val" id="stat-byts">0</span><span class="stat-label">Byts</span></div>
+          <div class="stat-box"><span class="stat-val" id="stat-wins">0</span><span class="stat-label">Vitórias</span></div>
+          <div class="stat-box"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Nível</span></div>
+        </div>
+        <div class="xp-section">
+          <div class="xp-label-row">
+            <span style="font-size:12px;color:var(--text-secondary)">XP para próximo nível</span>
+            <span style="font-size:12px;color:var(--primary)" id="xp-label">0/200</span>
+          </div>
+          <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+        </div>
+        <button class="btn-secondary" style="margin-top:8px;width:100%" onclick="handleLogout()">Sair da conta</button>
+      </div>
+    </section>
+    <div class="nav-spacer"></div>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-jogos" onclick="showTab('jogos')">
+      <span class="nav-icon">🎮</span><span class="nav-label">Jogos</span>
+    </button>
+    <button class="nav-item" id="nav-lobby" onclick="showTab('lobby')">
+      <span class="nav-icon">🚪</span><span class="nav-label">Salas</span>
+    </button>
+    <button class="nav-item" id="nav-loja" onclick="showTab('loja')">
+      <span class="nav-icon">🛍️</span><span class="nav-label">Loja</span>
+    </button>
+    <button class="nav-item" id="nav-perfil" onclick="showTab('perfil')">
+      <span class="nav-icon">👤</span><span class="nav-label">Perfil</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════
+     GAME OVERLAY
+══════════════════════════════════════ -->
+<div id="game-overlay" class="game-overlay hidden">
+  <div class="game-topbar">
+    <button class="game-back" onclick="closeGame()">← Voltar</button>
+    <span class="game-title-bar" id="game-title-bar">Jogo</span>
+    <div class="game-byts-mini">🪙 <span id="game-byts-mini">0</span></div>
+  </div>
+  <div class="game-content" id="game-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SALA DE ESPERA OVERLAY
+══════════════════════════════════════ -->
+<div id="waiting-overlay" class="game-overlay hidden">
+  <div class="waiting-wrap">
+    <div class="waiting-anim">⌛</div>
+    <h2 class="waiting-title">Aguardando primo...</h2>
+    <p class="waiting-sub">Compartilhe o código abaixo</p>
+    <div class="waiting-code" id="waiting-code">----</div>
+    <button class="btn-primary" style="max-width:240px" onclick="copyRoomCode()">📋 Copiar Código</button>
+    <button class="btn-secondary" style="max-width:240px;margin-top:8px" onclick="cancelRoom()">Cancelar</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPA_URL = 'https://qbqwfhohypmybrajktkq.supabase.co'
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFicXdmaG9oeXBteWJyYWprdGtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTkwNTUsImV4cCI6MjA5Nzk3NTA1NX0.RU5nlTrY5d0JKsbT6rcAwq8PBrs_-ve_lNej2fEyRgU'
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY)
+
+// ══════════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════════
+const DB_KEY      = 'primobytes_users'
+const SESSION_KEY = 'primobytes_session'
+
+let state = {
+  user: null,
+  users: {},
+  selectedAvatar: '😎',
+  currentRoom: null,    // sala ativa
+  realtimeChannel: null,// canal Supabase Realtime
+  mySymbol: null,       // 'X' ou 'O'
+  lobbyChannel: null,   // canal para lista de salas
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  loadUsers()
+  const saved = localStorage.getItem(SESSION_KEY)
+  if (saved && state.users[saved]) {
+    state.user = state.users[saved]
+    enterApp()
+  }
+})
+
+// ══════════════════════════════════════════════
+// LOCAL DB
+// ══════════════════════════════════════════════
+function loadUsers() {
+  try { state.users = JSON.parse(localStorage.getItem(DB_KEY)) || {} }
+  catch { state.users = {} }
+}
+function saveUsers() { localStorage.setItem(DB_KEY, JSON.stringify(state.users)) }
+function saveSession(email) { localStorage.setItem(SESSION_KEY, email) }
+function clearSession() { localStorage.removeItem(SESSION_KEY) }
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+function switchAuth(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='cadastro')))
+  document.getElementById('form-login').style.display   = tab==='login'   ? 'flex' : 'none'
+  document.getElementById('form-cadastro').style.display = tab==='cadastro'? 'flex' : 'none'
+}
+
+function selectAvatar(btn) {
+  document.querySelectorAll('.avatar-opt').forEach(b => b.classList.remove('selected'))
+  btn.classList.add('selected')
+  state.selectedAvatar = btn.textContent
+}
+
+function handleLogin(e) {
+  e.preventDefault()
+  const email = document.getElementById('login-email').value.trim().toLowerCase()
+  const senha = document.getElementById('login-senha').value
+  const errEl = document.getElementById('login-error')
+  loadUsers()
+  const user = state.users[email]
+  if (!user) { showFormError(errEl,'E-mail não cadastrado'); return }
+  if (user.senha !== btoa(senha)) { showFormError(errEl,'Senha incorreta'); return }
+  state.user = user
+  saveSession(email)
+  errEl.classList.add('hidden')
+  enterApp()
+}
+
+function handleCadastro(e) {
+  e.preventDefault()
+  const nome  = document.getElementById('cad-nome').value.trim()
+  const email = document.getElementById('cad-email').value.trim().toLowerCase()
+  const senha = document.getElementById('cad-senha').value
+  const errEl = document.getElementById('cad-error')
+  loadUsers()
+  if (state.users[email]) { showFormError(errEl,'E-mail já cadastrado'); return }
+  if (nome.length < 2)    { showFormError(errEl,'Apelido muito curto'); return }
+  const u = { email, nome, avatar:state.selectedAvatar, senha:btoa(senha), byts:100, xp:0, wins:0, level:1 }
+  state.users[email] = u
+  saveUsers()
+  state.user = u
+  saveSession(email)
+  errEl.classList.add('hidden')
+  showToast(`Bem-vindo(a), ${nome}! 🎉 +100 Byts!`)
+  enterApp()
+}
+
+function showFormError(el, msg) { el.textContent=msg; el.classList.remove('hidden') }
+
+function handleLogout() {
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  if (state.lobbyChannel)    sb.removeChannel(state.lobbyChannel)
+  state.user = null
+  clearSession()
+  document.getElementById('app-shell').classList.add('hidden')
+  document.getElementById('app-shell').classList.remove('active')
+  document.getElementById('login-screen').classList.remove('hidden')
+  document.getElementById('login-screen').classList.add('active')
+  showToast('Até logo! 👋')
+}
+
+// ══════════════════════════════════════════════
+// APP SHELL
+// ══════════════════════════════════════════════
+function enterApp() {
+  document.getElementById('login-screen').classList.remove('active')
+  document.getElementById('login-screen').classList.add('hidden')
+  document.getElementById('app-shell').classList.remove('hidden')
+  document.getElementById('app-shell').classList.add('active')
+  updateHeader()
+  showTab('jogos')
+}
+
+function updateHeader() {
+  const u = state.user; if (!u) return
+  const level = calcLevel(u.xp)
+  document.getElementById('hdr-avatar').textContent  = u.avatar
+  document.getElementById('hdr-name').textContent    = u.nome
+  document.getElementById('hdr-byts').textContent    = u.byts.toLocaleString('pt-BR')
+  document.getElementById('hdr-level').textContent   = 'Nv.'+level
+  document.getElementById('hdr-rank').textContent    = rankName(level)
+  updateProfileTab()
+}
+
+function updateProfileTab() {
+  const u = state.user; if (!u) return
+  const level = calcLevel(u.xp)
+  document.getElementById('profile-big-avatar').textContent = u.avatar
+  document.getElementById('profile-name').textContent       = u.nome
+  document.getElementById('profile-rank-badge').textContent = rankName(level)
+  document.getElementById('stat-byts').textContent  = u.byts.toLocaleString('pt-BR')
+  document.getElementById('stat-wins').textContent  = u.wins
+  document.getElementById('stat-level').textContent = level
+  const xpIn = u.xp % 200
+  document.getElementById('xp-label').textContent   = xpIn+'/200'
+  document.getElementById('xp-bar').style.width     = (xpIn/200*100)+'%'
+}
+
+function calcLevel(xp) { return Math.floor(xp/200)+1 }
+function rankName(lv) {
+  if (lv>=10) return '👑 Lenda'
+  if (lv>=7)  return '💜 Mestre'
+  if (lv>=4)  return '🔵 Veterano'
+  return '🟢 Novato'
+}
+
+function addByts(amount, isWin=true) {
+  state.user.byts += amount
+  state.user.xp   += amount
+  if (isWin) state.user.wins += 1
+  state.users[state.user.email] = state.user
+  saveUsers()
+  updateHeader()
+  const miniEl = document.getElementById('game-byts-mini')
+  if (miniEl) miniEl.textContent = state.user.byts.toLocaleString('pt-BR')
+}
+
+// ══════════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════════
+function showTab(tab) {
+  ['jogos','lobby','loja','perfil'].forEach(t => {
+    const el = document.getElementById('main-'+t)
+    if (el) el.classList.toggle('hidden', t!==tab)
+  })
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'))
+  const navEl = document.getElementById('nav-'+tab)
+  if (navEl) navEl.classList.add('active')
+  if (tab==='lobby') loadOpenRooms()
+}
+
+// ══════════════════════════════════════════════
+// LOBBY — Lista de salas abertas (Realtime)
+// ══════════════════════════════════════════════
+async function loadOpenRooms() {
+  const listEl = document.getElementById('rooms-list')
+  listEl.innerHTML = '<div class="empty-state">Carregando... ⏳</div>'
+
+  const { data, error } = await sb
+    .from('rooms')
+    .select('*')
+    .eq('status','waiting')
+    .order('created_at', { ascending: false })
+
+  renderRoomsList(data || [])
+
+  // Subscribe para atualizações em tempo real da lista
+  if (state.lobbyChannel) sb.removeChannel(state.lobbyChannel)
+  state.lobbyChannel = sb
+    .channel('lobby-rooms')
+    .on('postgres_changes', { event:'*', schema:'public', table:'rooms' }, () => {
+      loadOpenRooms()
+    })
+    .subscribe()
+}
+
+function renderRoomsList(rooms) {
+  const listEl = document.getElementById('rooms-list')
+  if (!rooms.length) {
+    listEl.innerHTML = '<div class="empty-state">Nenhuma sala aberta.<br/>Crie uma nos jogos! 🎮</div>'
+    return
+  }
+  listEl.innerHTML = rooms.map(r => `
+    <div class="room-card">
+      <div class="room-info">
+        <span class="room-game">❌ Jogo da Velha</span>
+        <span class="room-host">Host: ${r.host_name}</span>
+      </div>
+      <div class="room-code">${r.code}</div>
+      <button class="btn-join" onclick="joinRoom('${r.code}')">Entrar</button>
+    </div>
+  `).join('')
+}
+
+async function joinRoomByCode() {
+  const code = document.getElementById('room-code-input').value.toUpperCase().trim()
+  if (code.length < 4) { showToast('Digite um código de 4 letras'); return }
+  await joinRoom(code)
+}
+
+// ══════════════════════════════════════════════
+// GAME OVERLAY
+// ══════════════════════════════════════════════
+function openGame(slug) {
+  const content = document.getElementById('game-content')
+  document.getElementById('game-byts-mini').textContent = state.user.byts.toLocaleString('pt-BR')
+  document.getElementById('game-overlay').classList.remove('hidden')
+
+  const titles = { tictactoe:'❌ Jogo da Velha', rockpaper:'✊ Pedra Papel Tesoura', truthdare:'🎭 Verdade ou Desafio' }
+  document.getElementById('game-title-bar').textContent = titles[slug] || slug
+
+  if (slug==='tictactoe')  content.innerHTML = buildTTTMenu()
+  else if (slug==='rockpaper') content.innerHTML = buildRockPaper()
+  else if (slug==='truthdare') content.innerHTML = buildTruthDare()
+  else if (slug==='penalty')   content.innerHTML = buildPenaltyMenu()
+  else if (slug==='checkers')  content.innerHTML = buildCheckersMenu()
+  else if (slug==='domino')    content.innerHTML = buildDominoMenu()
+  else if (slug==='chess')     content.innerHTML = buildChessMenu()
+}
+
+function closeGame() {
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('game-content').innerHTML = ''
+  if (state.realtimeChannel) { sb.removeChannel(state.realtimeChannel); state.realtimeChannel=null }
+  state.currentRoom = null
+  state.mySymbol = null
+  updateHeader()
+}
+
+// ══════════════════════════════════════════════
+// JOGO DA VELHA — MENU (Online vs CPU)
+// ══════════════════════════════════════════════
+function buildTTTMenu() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon">❌</div>
+    <h2 class="ttt-menu-title">Jogo da Velha</h2>
+    <p class="ttt-menu-sub">Como quer jogar?</p>
+    <button class="mode-btn mode-online" onclick="tttOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Jogar Online</span>
+        <span class="mode-desc">Desafie um primo em tempo real</span>
+      </div>
+      <span class="mode-reward">+50 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="tttVsCPU()">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info">
+        <span class="mode-title">vs CPU</span>
+        <span class="mode-desc">Pratique contra a máquina</span>
+      </div>
+      <span class="mode-reward">+30 🪙</span>
+    </button>
+  </div>`
+}
+
+// ══════════════════════════════════════════════
+// TTT ONLINE — CRIAR SALA
+// ══════════════════════════════════════════════
+async function tttOnline() {
+  showToast('Criando sala... ⏳')
+  const code = genCode()
+
+  const { data, error } = await sb.from('rooms').insert({
+    code,
+    game: 'tictactoe',
+    host_name: state.user.nome,
+    status: 'waiting',
+    board: ['','','','','','','','',''],
+    current_turn: state.user.nome,
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+
+  state.currentRoom = data
+  state.mySymbol = 'X'
+
+  // Mostra overlay de espera
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+
+  // Escuta quando guest entrar
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms',
+      filter: `code=eq.${code}`
+    }, (payload) => {
+      const room = payload.new
+      state.currentRoom = room
+      if (room.status === 'playing') {
+        // Guest entrou!
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent = '❌ Jogo da Velha'
+        document.getElementById('game-content').innerHTML = buildTTTBoard()
+        renderTTTOnline(room)
+      }
+      if (room.status === 'finished') {
+        handleTTTResult(room)
+      }
+    })
+    .subscribe()
+}
+
+// ══════════════════════════════════════════════
+// TTT ONLINE — ENTRAR EM SALA
+// ══════════════════════════════════════════════
+async function joinRoom(code) {
+  showToast('Entrando na sala... ⏳')
+  const { data: room, error } = await sb
+    .from('rooms').select('*').eq('code', code).eq('status','waiting').maybeSingle()
+
+  if (error || !room) { showToast('Sala não encontrada ou já iniciada 😢'); return }
+  if (room.host_name === state.user.nome) { showToast('Você não pode entrar na sua própria sala!'); return }
+
+  // Redireciona para o handler correto por jogo
+  if (room.game === 'rockpaper') {
+    await rpsJoinRoom(code)
+    return
+  }
+  if (room.game === 'truthdare') {
+    await tdJoinRoom(code)
+    return
+  }
+  if (room.game === 'penalty') {
+    await penaltyJoinRoom(code)
+    return
+  }
+  if (room.game === 'checkers') {
+    await checkersJoinRoom(code)
+    return
+  }
+  if (room.game === 'domino') {
+    await dominoJoinRoom(code)
+    return
+  }
+  if (room.game === 'chess') {
+    await chessJoinRoom(code)
+    return
+  }
+
+  // Default: Jogo da Velha
+  const { data: updated } = await sb
+    .from('rooms')
+    .update({ guest_name: state.user.nome, status: 'playing' })
+    .eq('code', code).select().maybeSingle()
+
+  state.currentRoom = updated || room
+  state.mySymbol = 'O'
+
+  document.getElementById('game-title-bar').textContent = '❌ Jogo da Velha'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  document.getElementById('game-content').innerHTML = buildTTTBoard()
+  renderTTTOnline(state.currentRoom)
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes', {
+      event:'UPDATE', schema:'public', table:'rooms', filter:`code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      if (payload.new.status==='finished') handleTTTResult(payload.new)
+      else renderTTTOnline(payload.new)
+    })
+    .subscribe()
+}
+
+async function cancelRoom() {
+  if (state.currentRoom) {
+    await sb.from('rooms').delete().eq('code', state.currentRoom.code)
+    if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+    state.currentRoom = null
+    state.realtimeChannel = null
+  }
+  document.getElementById('waiting-overlay').classList.add('hidden')
+  document.getElementById('game-overlay').classList.remove('hidden')
+  document.getElementById('game-content').innerHTML = buildTTTMenu()
+}
+
+function copyRoomCode() {
+  const code = document.getElementById('waiting-code').textContent
+  navigator.clipboard?.writeText(code).catch(()=>{})
+  showToast('Código copiado! 📋 Mande pro primo')
+}
+
+// ══════════════════════════════════════════════
+// TTT ONLINE — TABULEIRO
+// ══════════════════════════════════════════════
+function buildTTTBoard() {
+  return `
+  <div class="ttt-wrap">
+    <div class="ttt-players">
+      <div class="ttt-player" id="ttt-p1">
+        <span id="ttt-p1-av"></span>
+        <span id="ttt-p1-name"></span>
+        <span class="ttt-symbol ttt-x-color">X</span>
+      </div>
+      <div class="ttt-versus">VS</div>
+      <div class="ttt-player" id="ttt-p2">
+        <span id="ttt-p2-av"></span>
+        <span id="ttt-p2-name"></span>
+        <span class="ttt-symbol ttt-o-color">O</span>
+      </div>
+    </div>
+    <div class="ttt-status" id="ttt-status">Conectando...</div>
+    <div class="ttt-board" id="ttt-board">
+      ${Array(9).fill(0).map((_,i)=>`<button class="ttt-cell" id="ttt-c${i}" onclick="tttClickOnline(${i})"></button>`).join('')}
+    </div>
+  </div>`
+}
+
+function renderTTTOnline(room) {
+  const board = room.board || Array(9).fill('')
+  const isMyTurn = room.current_turn === state.user.nome
+  const statusEl = document.getElementById('ttt-status')
+  const p1av = document.getElementById('ttt-p1-av')
+  const p2av = document.getElementById('ttt-p2-av')
+  const p1nm = document.getElementById('ttt-p1-name')
+  const p2nm = document.getElementById('ttt-p2-name')
+
+  if (!statusEl) return
+
+  // Nomes e avatares
+  if (p1av) p1av.textContent = state.mySymbol==='X' ? state.user.avatar : '🙂'
+  if (p2av) p2av.textContent = state.mySymbol==='O' ? state.user.avatar : '🙂'
+  if (p1nm) p1nm.textContent = room.host_name
+  if (p2nm) p2nm.textContent = room.guest_name || '...'
+
+  // Status
+  if (room.status==='waiting') {
+    statusEl.textContent = 'Aguardando oponente...'
+    statusEl.style.color = ''
+    return
+  }
+  statusEl.textContent = isMyTurn ? '👆 Sua vez!' : `⏳ Vez de ${room.current_turn}...`
+  statusEl.style.color = isMyTurn ? '#22c55e' : ''
+
+  // Destaque do jogador ativo
+  document.getElementById('ttt-p1')?.classList.toggle('ttt-player-active',
+    room.current_turn === room.host_name)
+  document.getElementById('ttt-p2')?.classList.toggle('ttt-player-active',
+    room.current_turn === room.guest_name)
+
+  // Renderiza células
+  board.forEach((val, i) => {
+    const cell = document.getElementById('ttt-c'+i)
+    if (!cell) return
+    cell.textContent = val
+    cell.className = 'ttt-cell' + (val==='X'?' ttt-x':val==='O'?' ttt-o':'')
+    cell.disabled = !isMyTurn || val !== ''
+  })
+}
+
+async function tttClickOnline(idx) {
+  const room = state.currentRoom
+  if (!room || room.status!=='playing') return
+  if (room.current_turn !== state.user.nome) return
+
+  const board = [...(room.board || Array(9).fill(''))]
+  if (board[idx] !== '') return
+  board[idx] = state.mySymbol
+
+  // Verifica vencedor
+  const winner = tttCheckWinner(board)
+  const isDraw = !winner && board.every(c=>c!=='')
+  const nextTurn = state.mySymbol==='X' ? room.guest_name : room.host_name
+
+  const updates = {
+    board,
+    current_turn: nextTurn,
+    ...(winner ? { status:'finished', winner: state.user.nome } : {}),
+    ...(isDraw  ? { status:'finished', winner: 'draw' } : {}),
+  }
+
+  await sb.from('rooms').update(updates).eq('code', room.code)
+}
+
+function tttCheckWinner(board) {
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
+  for (const [a,b,c] of lines) {
+    if (board[a] && board[a]===board[b] && board[a]===board[c]) {
+      // Marca células vencedoras
+      setTimeout(() => {
+        [a,b,c].forEach(i => document.getElementById('ttt-c'+i)?.classList.add('ttt-win'))
+      }, 50)
+      return board[a]
+    }
+  }
+  return null
+}
+
+function handleTTTResult(room) {
+  const statusEl = document.getElementById('ttt-status')
+  if (!statusEl) return
+
+  const iWon = room.winner === state.user.nome
+  const isDraw = room.winner === 'draw'
+
+  if (iWon) {
+    addByts(50, true)
+    statusEl.textContent = '🏆 Você venceu! +50 Byts!'
+    statusEl.style.color = '#22c55e'
+  } else if (isDraw) {
+    statusEl.textContent = '🤝 Empate!'
+    statusEl.style.color = '#f59e0b'
+  } else {
+    statusEl.textContent = '😤 Você perdeu! Tente novamente.'
+    statusEl.style.color = '#ef4444'
+  }
+
+  // Botão de revanche
+  setTimeout(() => {
+    const board = document.getElementById('ttt-board')
+    if (board) {
+      board.insertAdjacentHTML('afterend', `
+        <div style="display:flex;gap:8px;margin-top:16px;width:100%;max-width:300px">
+          <button class="btn-primary" onclick="tttOnline()" style="flex:1">Revanche 🔄</button>
+          <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+        </div>`)
+    }
+  }, 500)
+
+  if (state.realtimeChannel) { sb.removeChannel(state.realtimeChannel); state.realtimeChannel=null }
+}
+
+// ══════════════════════════════════════════════
+// TTT VS CPU
+// ══════════════════════════════════════════════
+let tttBoardCPU, tttGOCPU, tttSpCPU=0, tttScCPU=0, tttRndCPU=0
+
+function tttVsCPU() {
+  document.getElementById('game-content').innerHTML = `
+  <div class="ttt-wrap">
+    <div class="ttt-scores">
+      <div class="ttt-score-box"><span class="ttt-score-label">${state.user.avatar} Você (X)</span><span class="ttt-score-val" id="ttt-sp">0</span></div>
+      <div class="ttt-score-box ttt-score-mid"><span style="font-size:11px;color:var(--text-muted)">Partidas</span><span class="ttt-score-val" id="ttt-rnd">0</span></div>
+      <div class="ttt-score-box"><span class="ttt-score-label">🤖 CPU (O)</span><span class="ttt-score-val" id="ttt-sc">0</span></div>
+    </div>
+    <div class="ttt-status" id="ttt-status">Sua vez!</div>
+    <div class="ttt-board" id="ttt-board">
+      ${Array(9).fill(0).map((_,i)=>`<button class="ttt-cell" onclick="tttClickCPU(${i})"></button>`).join('')}
+    </div>
+    <button class="btn-secondary" style="margin-top:16px" onclick="tttVsCPU()">Nova Partida 🔄</button>
+  </div>`
+  tttBoardCPU = Array(9).fill(''); tttGOCPU = false
+}
+
+function tttClickCPU(i) {
+  if (tttGOCPU||tttBoardCPU[i]) return
+  tttBoardCPU[i]='X'; tttRenderCPU()
+  const w=tttCheckWinner(tttBoardCPU)
+  if (w){tttEndCPU(w);return}
+  if(tttBoardCPU.every(c=>c)){tttEndCPU('draw');return}
+  document.getElementById('ttt-status').textContent='🤖 CPU pensando...'
+  setTimeout(()=>{
+    const best=tttBestMove()
+    tttBoardCPU[best]='O'; tttRenderCPU()
+    const w2=tttCheckWinner(tttBoardCPU)
+    if(w2){tttEndCPU(w2);return}
+    if(tttBoardCPU.every(c=>c)){tttEndCPU('draw');return}
+    document.getElementById('ttt-status').textContent='Sua vez!'
+  },500)
+}
+
+function tttBestMove() {
+  for(let i=0;i<9;i++){if(!tttBoardCPU[i]){tttBoardCPU[i]='O';if(tttCheckWinner(tttBoardCPU)==='O'){tttBoardCPU[i]='';return i}tttBoardCPU[i]=''}}
+  for(let i=0;i<9;i++){if(!tttBoardCPU[i]){tttBoardCPU[i]='X';if(tttCheckWinner(tttBoardCPU)==='X'){tttBoardCPU[i]='';return i}tttBoardCPU[i]=''}}
+  if(!tttBoardCPU[4])return 4
+  const c=[0,2,6,8].filter(i=>!tttBoardCPU[i])
+  if(c.length)return c[Math.floor(Math.random()*c.length)]
+  return tttBoardCPU.findIndex(c=>!c)
+}
+
+function tttRenderCPU() {
+  const cells=document.querySelectorAll('.ttt-cell')
+  tttBoardCPU.forEach((v,i)=>{
+    cells[i].textContent=v
+    cells[i].className='ttt-cell'+(v==='X'?' ttt-x':v==='O'?' ttt-o':'')
+  })
+}
+
+function tttEndCPU(r) {
+  tttGOCPU=true; tttRndCPU++
+  const s=document.getElementById('ttt-status')
+  if(r==='X'){tttSpCPU++;addByts(30);s.textContent='🏆 Você venceu! +30 Byts!';s.style.color='#22c55e'}
+  else if(r==='O'){tttScCPU++;s.textContent='😤 CPU venceu!';s.style.color='#ef4444'}
+  else{s.textContent='🤝 Empate!';s.style.color='#f59e0b'}
+  const sp=document.getElementById('ttt-sp');const sc=document.getElementById('ttt-sc');const rn=document.getElementById('ttt-rnd')
+  if(sp)sp.textContent=tttSpCPU;if(sc)sc.textContent=tttScCPU;if(rn)rn.textContent=tttRndCPU
+}
+
+// ══════════════════════════════════════════════
+// PEDRA PAPEL TESOURA — MENU
+// ══════════════════════════════════════════════
+function buildRockPaper() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon">✊</div>
+    <h2 class="ttt-menu-title">Pedra Papel Tesoura</h2>
+    <p class="ttt-menu-sub">Como quer jogar?</p>
+    <button class="mode-btn mode-online" onclick="rpsOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Jogar Online</span>
+        <span class="mode-desc">Desafie um primo em tempo real</span>
+      </div>
+      <span class="mode-reward">+30 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="rpsVsCPU()">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info">
+        <span class="mode-title">vs CPU</span>
+        <span class="mode-desc">Pratique contra a máquina</span>
+      </div>
+      <span class="mode-reward">+20 🪙</span>
+    </button>
+  </div>`
+}
+
+// ── RPS VS CPU ─────────────────────────────────
+let rpsSpG=0, rpsScG=0, rpsRG=0
+const rpsE = {pedra:'✊', papel:'✋', tesoura:'✌️'}
+const rpsO = ['pedra','papel','tesoura']
+
+function rpsVsCPU() {
+  rpsSpG=0; rpsScG=0; rpsRG=0
+  document.getElementById('game-content').innerHTML = `
+  <div class="rps-wrap">
+    <div class="rps-scores">
+      <div class="ttt-score-box">
+        <span class="ttt-score-label">${state.user.avatar} Você</span>
+        <span class="ttt-score-val" id="rps-sp">0</span>
+      </div>
+      <div class="ttt-score-box ttt-score-mid">
+        <span style="font-size:11px;color:var(--text-muted)">Rodadas</span>
+        <span class="ttt-score-val" id="rps-round">0</span>
+      </div>
+      <div class="ttt-score-box">
+        <span class="ttt-score-label">🤖 CPU</span>
+        <span class="ttt-score-val" id="rps-sc">0</span>
+      </div>
+    </div>
+    <div class="rps-arena">
+      <div class="rps-player-col">
+        <span style="font-size:13px;color:var(--text-secondary);font-weight:600">${state.user.avatar} Você</span>
+        <div class="rps-choice-box" id="rps-player-box"><span id="rps-player-icon">❓</span></div>
+      </div>
+      <span class="rps-vs">VS</span>
+      <div class="rps-player-col">
+        <span style="font-size:13px;color:var(--text-secondary);font-weight:600">🤖 CPU</span>
+        <div class="rps-choice-box" id="rps-cpu-box"><span id="rps-cpu-icon">❓</span></div>
+      </div>
+    </div>
+    <div class="rps-result" id="rps-result">Escolha sua jogada!</div>
+    <div class="rps-buttons">
+      <button class="rps-btn" onclick="rpsPlayCPU('pedra')">✊<br/><span>Pedra</span></button>
+      <button class="rps-btn" onclick="rpsPlayCPU('papel')">✋<br/><span>Papel</span></button>
+      <button class="rps-btn" onclick="rpsPlayCPU('tesoura')">✌️<br/><span>Tesoura</span></button>
+    </div>
+    <button class="btn-secondary" style="margin-top:8px" onclick="rpsVsCPU()">Reiniciar 🔄</button>
+  </div>`
+}
+
+function rpsPlayCPU(c) {
+  const cpu = rpsO[Math.floor(Math.random()*3)]
+  // Animação: esconde escolhas, revela com delay
+  document.getElementById('rps-player-icon').textContent = '🤔'
+  document.getElementById('rps-cpu-icon').textContent = '🤔'
+  document.getElementById('rps-result').textContent = 'Revelando...'
+  document.getElementById('rps-result').style.color = ''
+  setTimeout(() => {
+    document.getElementById('rps-player-icon').textContent = rpsE[c]
+    document.getElementById('rps-cpu-icon').textContent = rpsE[cpu]
+    rpsRG++
+    document.getElementById('rps-round').textContent = rpsRG
+    const el = document.getElementById('rps-result')
+    let r
+    if (c===cpu) r='draw'
+    else if ((c==='pedra'&&cpu==='tesoura')||(c==='papel'&&cpu==='pedra')||(c==='tesoura'&&cpu==='papel')) r='win'
+    else r='lose'
+    if (r==='win')  { rpsSpG++; addByts(20); el.textContent='🏆 Você venceu! +20 Byts!'; el.style.color='#22c55e' }
+    else if (r==='lose') { rpsScG++; el.textContent='😤 CPU ganhou!'; el.style.color='#ef4444' }
+    else { el.textContent='🤝 Empate!'; el.style.color='#f59e0b' }
+    document.getElementById('rps-sp').textContent = rpsSpG
+    document.getElementById('rps-sc').textContent = rpsScG
+  }, 600)
+}
+
+// ── RPS ONLINE ──────────────────────────────────
+async function rpsOnline() {
+  showToast('Criando sala... ⏳')
+  const code = genCode()
+  const initState = { p1_choice:'', p2_choice:'', round:0, score_p1:0, score_p2:0 }
+
+  const { data, error } = await sb.from('rooms').insert({
+    code,
+    game: 'rockpaper',
+    host_name: state.user.nome,
+    status: 'waiting',
+    board: initState,
+    current_turn: 'both',
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+
+  state.currentRoom = data
+  state.mySymbol = 'P1'
+
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes', {
+      event:'UPDATE', schema:'public', table:'rooms', filter:`code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      const room = payload.new
+      if (room.status==='playing') {
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent = '✊ Pedra Papel Tesoura'
+        document.getElementById('game-content').innerHTML = buildRPSOnlineBoard(room)
+      }
+      if (room.status==='playing' && room.status!=='finished') {
+        rpsRenderOnline(room)
+      }
+      if (room.status==='finished') {
+        rpsHandleResult(room)
+      }
+    })
+    .subscribe()
+}
+
+async function rpsJoinRoom(code) {
+  const { data: room, error } = await sb
+    .from('rooms').select('*').eq('code',code).eq('status','waiting').maybeSingle()
+  if (error || !room || room.game!=='rockpaper') return false
+
+  state.mySymbol = 'P2'
+  const { data: updated } = await sb
+    .from('rooms')
+    .update({ guest_name: state.user.nome, status: 'playing' })
+    .eq('code', code).select().maybeSingle()
+
+  state.currentRoom = updated || room
+  document.getElementById('game-title-bar').textContent = '✊ Pedra Papel Tesoura'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  document.getElementById('game-content').innerHTML = buildRPSOnlineBoard(state.currentRoom)
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes', {
+      event:'UPDATE', schema:'public', table:'rooms', filter:`code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      rpsRenderOnline(payload.new)
+      if (payload.new.status==='finished') rpsHandleResult(payload.new)
+    })
+    .subscribe()
+  return true
+}
+
+function buildRPSOnlineBoard(room) {
+  rpsMyChoice = null
+  rpsWaiting = false
+  const bd = room.board || {}
+  return `
+  <div class="rps-wrap">
+    <div class="rps-online-header">
+      <div class="rps-online-player">
+        <span style="font-size:24px">${state.user.avatar}</span>
+        <span style="font-size:13px;font-weight:700">${room.host_name}</span>
+        <span class="rps-online-score" id="rps-score-p1">${bd.score_p1||0}</span>
+      </div>
+      <div style="text-align:center">
+        <span style="font-size:11px;color:var(--text-muted)">Rodada</span>
+        <div style="font-size:20px;font-weight:800;color:var(--primary)" id="rps-round-online">${bd.round||0}</div>
+      </div>
+      <div class="rps-online-player">
+        <span style="font-size:24px">🙂</span>
+        <span style="font-size:13px;font-weight:700">${room.guest_name||'...' }</span>
+        <span class="rps-online-score" id="rps-score-p2">${bd.score_p2||0}</span>
+      </div>
+    </div>
+
+    <div class="rps-arena">
+      <div class="rps-player-col">
+        <span style="font-size:12px;color:var(--text-secondary)">Você</span>
+        <div class="rps-choice-box" id="rps-my-box"><span id="rps-my-icon">❓</span></div>
+      </div>
+      <span class="rps-vs">VS</span>
+      <div class="rps-player-col">
+        <span style="font-size:12px;color:var(--text-secondary)">Oponente</span>
+        <div class="rps-choice-box" id="rps-opp-box"><span id="rps-opp-icon">❓</span></div>
+      </div>
+    </div>
+
+    <div class="rps-result" id="rps-online-result">Escolha sua jogada!</div>
+
+    <div class="rps-buttons" id="rps-online-btns">
+      <button class="rps-btn" onclick="rpsChooseOnline('pedra')">✊<br/><span>Pedra</span></button>
+      <button class="rps-btn" onclick="rpsChooseOnline('papel')">✋<br/><span>Papel</span></button>
+      <button class="rps-btn" onclick="rpsChooseOnline('tesoura')">✌️<br/><span>Tesoura</span></button>
+    </div>
+  </div>`
+}
+
+let rpsMyChoice = null
+let rpsWaiting = false
+
+async function rpsChooseOnline(choice) {
+  if (rpsMyChoice || rpsWaiting) return
+  rpsMyChoice = choice
+  rpsWaiting = true
+
+  // UI feedback imediato
+  const btns = document.querySelectorAll('#rps-online-btns .rps-btn')
+  btns.forEach(b => {
+    b.disabled = true
+    b.style.opacity = rpsE[choice] && b.querySelector('br') && b.childNodes[0].textContent.trim() === rpsE[choice] ? '1' : '0.35'
+  })
+  const myIconEl = document.getElementById('rps-my-icon')
+  const resultEl = document.getElementById('rps-online-result')
+  if (myIconEl) myIconEl.textContent = rpsE[choice]
+  if (resultEl) { resultEl.textContent = '✅ Aguardando oponente...'; resultEl.style.color = '' }
+
+  const room = state.currentRoom
+  if (!room) return
+  const isP1 = state.mySymbol === 'P1'
+  const bd = JSON.parse(JSON.stringify(room.board || {}))
+
+  // Salva minha escolha no campo correto
+  if (isP1) bd.p1_choice = choice
+  else      bd.p2_choice = choice
+
+  // Verifica se oponente já escolheu
+  const otherChoice = isP1 ? bd.p2_choice : bd.p1_choice
+
+  if (otherChoice && otherChoice !== '') {
+    // Ambos escolheram — resolve a rodada
+    const myC  = choice
+    const oppC = otherChoice
+    let p1Result // resultado do ponto de vista do P1
+    if (myC === oppC) p1Result = 'draw'
+    else if (
+      (myC==='pedra'&&oppC==='tesoura') ||
+      (myC==='papel'&&oppC==='pedra')   ||
+      (myC==='tesoura'&&oppC==='papel')
+    ) p1Result = isP1 ? 'win' : 'lose'
+    else p1Result = isP1 ? 'lose' : 'win'
+
+    // Calcula resultado do P2
+    const p2Result = p1Result==='draw' ? 'draw' : p1Result==='win' ? 'lose' : 'win'
+
+    const newScoreP1 = (bd.score_p1||0) + (p1Result==='win' ? 1 : 0)
+    const newScoreP2 = (bd.score_p2||0) + (p2Result==='win' ? 1 : 0)
+    const gameOver   = newScoreP1 >= 3 || newScoreP2 >= 3
+
+    await sb.from('rooms').update({
+      board: {
+        p1_choice: '', p2_choice: '',
+        round: (bd.round||0) + 1,
+        score_p1: newScoreP1,
+        score_p2: newScoreP2,
+        last_p1: isP1 ? myC : oppC,
+        last_p2: isP1 ? oppC : myC,
+        last_p1_result: p1Result,
+      },
+      status: gameOver ? 'finished' : 'playing',
+      winner: newScoreP1>=3 ? room.host_name : newScoreP2>=3 ? room.guest_name : null,
+    }).eq('code', room.code)
+  } else {
+    // Só eu escolhi — aguarda oponente
+    await sb.from('rooms').update({ board: bd }).eq('code', room.code)
+  }
+}
+
+function rpsRenderOnline(room) {
+  const bd  = room.board || {}
+  const isP1 = state.mySymbol === 'P1'
+
+  // Atualiza scores e rodada
+  const s1El = document.getElementById('rps-score-p1')
+  const s2El = document.getElementById('rps-score-p2')
+  const rnEl = document.getElementById('rps-round-online')
+  if (s1El) s1El.textContent = bd.score_p1 || 0
+  if (s2El) s2El.textContent = bd.score_p2 || 0
+  if (rnEl) rnEl.textContent = bd.round    || 0
+
+  if (room.status === 'finished') return
+
+  // Houve resultado de rodada (last_p1 preenchido e choices zeradas = rodada resolvida)
+  const hadResult = bd.last_p1 && bd.last_p2 && bd.p1_choice === '' && bd.p2_choice === ''
+  if (hadResult) {
+    const myLastC  = isP1 ? bd.last_p1 : bd.last_p2
+    const oppLastC = isP1 ? bd.last_p2 : bd.last_p1
+    const p1Res    = bd.last_p1_result || 'draw'
+    const myRes    = isP1 ? p1Res : (p1Res==='win'?'lose':p1Res==='lose'?'win':'draw')
+
+    const myIcon  = document.getElementById('rps-my-icon')
+    const oppIcon = document.getElementById('rps-opp-icon')
+    const resEl   = document.getElementById('rps-online-result')
+
+    if (myIcon)  myIcon.textContent  = rpsE[myLastC]  || '❓'
+    if (oppIcon) oppIcon.textContent = rpsE[oppLastC] || '❓'
+    if (resEl) {
+      if (myRes==='win')  { resEl.textContent='🏆 Você venceu a rodada!'; resEl.style.color='#22c55e' }
+      else if (myRes==='lose') { resEl.textContent='😤 Perdeu a rodada!'; resEl.style.color='#ef4444' }
+      else { resEl.textContent='🤝 Empate na rodada!'; resEl.style.color='#f59e0b' }
+    }
+
+    // Prepara próxima rodada após 2s
+    setTimeout(() => {
+      rpsMyChoice = null
+      rpsWaiting  = false
+      if (myIcon)  myIcon.textContent  = '❓'
+      if (oppIcon) oppIcon.textContent = '❓'
+      if (resEl) { resEl.textContent='Nova rodada! Escolha:'; resEl.style.color='' }
+      document.querySelectorAll('#rps-online-btns .rps-btn').forEach(b=>{
+        b.disabled=false; b.style.opacity='1'
+      })
+    }, 2000)
+  }
+}
+
+function rpsHandleResult(room) {
+  const iWon = room.winner === state.user.nome
+  const isDraw = !room.winner
+  const bd = room.board||{}
+  if (iWon) addByts(30, true)
+  setTimeout(() => {
+    const content = document.getElementById('game-content')
+    if (!content) return
+    content.innerHTML = `
+    <div class="rps-wrap" style="align-items:center;justify-content:center;min-height:300px">
+      <div style="font-size:64px">${iWon?'🏆':isDraw?'🤝':'😤'}</div>
+      <h2 style="font-size:22px;font-weight:800;text-align:center;color:${iWon?'#22c55e':isDraw?'#f59e0b':'#ef4444'}">${iWon?'Você venceu!':isDraw?'Empate!':'Você perdeu!'}</h2>
+      ${iWon ? '<p style="color:#f59e0b;font-weight:700">+30 Byts! 🪙</p>' : ''}
+      <p style="color:var(--text-secondary);font-size:13px">Placar: ${bd.score_p1||0} x ${bd.score_p2||0}</p>
+      <div style="display:flex;gap:8px;margin-top:8px;width:100%">
+        <button class="btn-primary" onclick="rpsOnline()" style="flex:1">Revanche 🔄</button>
+        <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+      </div>
+    </div>`
+  }, 2000)
+  if (state.realtimeChannel) { sb.removeChannel(state.realtimeChannel); state.realtimeChannel=null }
+}
+
+// ══════════════════════════════════════════════
+// VERDADE OU DESAFIO
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// VERDADE OU DESAFIO — DADOS
+// ══════════════════════════════════════════════
+const VERDADES = [
+  'Qual é a coisa mais estranha que você já comeu?',
+  'Você já fingiu estar doente para não ir a algum lugar?',
+  'Qual é o seu maior medo que ninguém sabe?',
+  'Você já culpou alguém por algo que você fez?',
+  'Qual primo você acha mais chato? (pode falar!)',
+  'Já entrou em algum lugar que não era pra entrar?',
+  'Qual é a mentira que você conta com mais frequência?',
+  'Se pudesse mudar uma coisa em você, o que seria?',
+  'Qual é a coisa mais bizarra que você já pesquisou?',
+  'Você já leu a conversa de alguém sem permissão?',
+  'Qual foi a pior mentira que você contou para seus pais?',
+  'Você já teve crush em algum primo(a)?',
+  'Qual é o seu hábito mais esquisito que ninguém sabe?',
+  'O que você faria se ganhasse R$1 milhão amanhã?',
+  'Já tomou algo sem pedir permissão e nunca contou?',
+]
+const DESAFIOS = [
+  'Imite um animal por 30 segundos sem parar.',
+  'Mande uma mensagem de "saudades" para alguém aleatório.',
+  'Fique 1 minuto sem piscar (ou tente!).',
+  'Dance a música que está tocando agora por 30 segundos.',
+  'Faça 10 flexões agora.',
+  'Ligue para alguém e cante parabéns sem explicar o motivo.',
+  'Fique 5 minutos falando só com voz de bebê.',
+  'Poste uma foto sua com cara feia nas stories.',
+  'Tente colocar o pé atrás da cabeça.',
+  'Imite um membro da família até alguém adivinhar quem é.',
+  'Fale tudo ao contrário por 2 minutos.',
+  'Faça uma declaração de amor para o teto.',
+  'Invente um rap sobre o primo à sua esquerda agora.',
+  'Beba um copo d\'água inteiro em 10 segundos.',
+  'Conte uma piada. Se ninguém rir, faça um desafio extra.',
+]
+
+// ══════════════════════════════════════════════
+// VERDADE OU DESAFIO — MENU
+// ══════════════════════════════════════════════
+function buildTruthDare() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon">🎭</div>
+    <h2 class="ttt-menu-title">Verdade ou Desafio</h2>
+    <p class="ttt-menu-sub">Como quer jogar?</p>
+    <button class="mode-btn mode-online" onclick="tdOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Sala Online</span>
+        <span class="mode-desc">Até 6 primos na mesma sala</span>
+      </div>
+      <span class="mode-reward">+15 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="tdSolo()">
+      <span class="mode-icon">🎲</span>
+      <div class="mode-info">
+        <span class="mode-title">Modo Solo / Local</span>
+        <span class="mode-desc">Passem o celular entre si</span>
+      </div>
+      <span class="mode-reward">+10 🪙</span>
+    </button>
+  </div>`
+}
+
+// ── MODO SOLO ───────────────────────────────
+function tdSolo() {
+  document.getElementById('game-content').innerHTML = `
+  <div class="td-wrap">
+    <div class="td-card" id="td-card">
+      <div class="td-placeholder">
+        <span style="font-size:48px">🎭</span>
+        <p>Escolha Verdade ou Desafio!</p>
+      </div>
+    </div>
+    <div class="td-buttons">
+      <button class="td-btn td-verdade" onclick="tdPick('verdade')">🗣️ Verdade</button>
+      <button class="td-btn td-desafio" onclick="tdPick('desafio')">💥 Desafio</button>
+    </div>
+    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">
+      Cada rodada vale 10 Byts!
+    </p>
+  </div>`
+}
+
+function tdPick(type) {
+  const list  = type === 'verdade' ? VERDADES : DESAFIOS
+  const item  = list[Math.floor(Math.random() * list.length)]
+  const emoji = type === 'verdade' ? '🗣️' : '💥'
+  const color = type === 'verdade' ? '#6366f1' : '#ef4444'
+  document.getElementById('td-card').innerHTML = `
+    <div class="td-result" style="border-color:${color}40">
+      <span style="font-size:36px">${emoji}</span>
+      <p class="td-type" style="color:${color}">${type === 'verdade' ? 'VERDADE' : 'DESAFIO'}</p>
+      <p class="td-text">${item}</p>
+      <button class="td-done-btn" onclick="tdCompleteSolo()">✅ Completei! +10 Byts</button>
+    </div>`
+}
+
+function tdCompleteSolo() {
+  addByts(10, false)
+  showToast('+10 Byts! 🪙')
+  tdSolo()
+}
+
+// ══════════════════════════════════════════════
+// VERDADE OU DESAFIO — ONLINE
+// ══════════════════════════════════════════════
+async function tdOnline() {
+  showToast('Criando sala... ⏳')
+  const code = genCode()
+  const initBoard = {
+    players: [state.user.nome],
+    avatars: { [state.user.nome]: state.user.avatar },
+    current_player: '',
+    card_type: '',
+    card_text: '',
+    phase: 'lobby',   // lobby | choosing | reveal | voting
+    votes: {},
+    round: 0,
+    scores: {},
+  }
+
+  const { data, error } = await sb.from('rooms').insert({
+    code,
+    game: 'truthdare',
+    host_name: state.user.nome,
+    status: 'waiting',
+    board: initBoard,
+    current_turn: state.user.nome,
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+
+  state.currentRoom = data
+  state.mySymbol = 'host'
+
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+
+  // Muda texto de espera para TD
+  document.querySelector('.waiting-title').textContent = 'Sala criada! 🎭'
+  document.querySelector('.waiting-sub').textContent   = 'Aguardando primos entrarem...'
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      const room = payload.new
+      const bd   = room.board || {}
+
+      // Quando alguém entra na sala (lobby ainda aberto)
+      if (room.status === 'waiting' || (room.status === 'playing' && bd.phase === 'lobby')) {
+        tdUpdateWaitingList(bd)
+      }
+      // Jogo iniciado
+      if (room.status === 'playing' && bd.phase !== 'lobby') {
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent = '🎭 Verdade ou Desafio'
+        tdRenderGame(room)
+      }
+      if (room.status === 'finished') tdRenderEnd(room)
+    })
+    .subscribe()
+}
+
+function tdUpdateWaitingList(bd) {
+  const players = bd.players || []
+  const listEl  = document.querySelector('.waiting-players')
+  if (!listEl) {
+    // Adiciona lista na tela de espera se ainda não existe
+    const wrap = document.querySelector('.waiting-wrap')
+    if (!wrap) return
+    const div = document.createElement('div')
+    div.className = 'waiting-players'
+    wrap.insertBefore(div, wrap.querySelector('button'))
+  }
+  const el = document.querySelector('.waiting-players')
+  if (!el) return
+  el.innerHTML = `
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">
+      ${players.length}/6 primos na sala
+    </p>
+    <div class="td-players-row">
+      ${players.map(p => `
+        <div class="td-player-chip">
+          <span>${bd.avatars?.[p] || '🙂'}</span>
+          <span>${p}</span>
+        </div>`).join('')}
+    </div>
+    ${state.mySymbol === 'host' && players.length >= 2 ? `
+      <button class="btn-primary" style="margin-top:12px;max-width:220px" onclick="tdStartGame()">
+        🎭 Iniciar Jogo (${players.length} primos)
+      </button>` : players.length < 2 ? `
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Mínimo 2 primos para iniciar</p>` : `
+      <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">Aguardando host iniciar...</p>`}
+  `
+}
+
+async function tdStartGame() {
+  const room = state.currentRoom
+  const bd   = { ...room.board }
+  const firstPlayer = bd.players[Math.floor(Math.random() * bd.players.length)]
+  bd.phase          = 'choosing'
+  bd.current_player = firstPlayer
+  bd.round          = 1
+
+  await sb.from('rooms').update({
+    board: bd,
+    status: 'playing',
+    guest_name: bd.players.slice(1).join(', '),
+  }).eq('code', room.code)
+}
+
+async function tdJoinRoom(code) {
+  const { data: room, error } = await sb
+    .from('rooms').select('*').eq('code', code).eq('status', 'waiting').maybeSingle()
+  if (error || !room || room.game !== 'truthdare') return false
+
+  const bd = { ...room.board }
+  if ((bd.players || []).length >= 6) { showToast('Sala cheia! (máx 6 primos)'); return true }
+  if ((bd.players || []).includes(state.user.nome)) { showToast('Você já está nesta sala!'); return true }
+
+  bd.players = [...(bd.players || []), state.user.nome]
+  bd.avatars  = { ...(bd.avatars || {}), [state.user.nome]: state.user.avatar }
+  bd.scores   = { ...(bd.scores  || {}), [state.user.nome]: 0 }
+
+  await sb.from('rooms').update({ board: bd }).eq('code', code)
+
+  state.currentRoom = { ...room, board: bd }
+  state.mySymbol    = 'guest'
+
+  // Mostra lobby de espera
+  document.getElementById('game-title-bar').textContent = '🎭 Verdade ou Desafio'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  document.getElementById('game-content').innerHTML = tdBuildLobbyView(bd, room.code)
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      const room2 = payload.new
+      const bd2   = room2.board || {}
+      if (bd2.phase === 'lobby' || bd2.phase === undefined) {
+        document.getElementById('game-content').innerHTML = tdBuildLobbyView(bd2, code)
+      } else {
+        document.getElementById('game-content').innerHTML = ''
+        tdRenderGame(room2)
+      }
+      if (room2.status === 'finished') tdRenderEnd(room2)
+    })
+    .subscribe()
+  return true
+}
+
+function tdBuildLobbyView(bd, code) {
+  const players = bd.players || []
+  return `
+  <div class="td-lobby-wrap">
+    <div style="font-size:48px;text-align:center">🎭</div>
+    <h3 style="text-align:center;font-size:18px;font-weight:800">Sala: ${code}</h3>
+    <p style="text-align:center;font-size:13px;color:var(--text-secondary)">${players.length}/6 primos conectados</p>
+    <div class="td-players-grid">
+      ${players.map(p => `
+        <div class="td-player-card ${p === state.user.nome ? 'td-me' : ''}">
+          <span class="td-player-av">${bd.avatars?.[p] || '🙂'}</span>
+          <span class="td-player-nm">${p}</span>
+          ${p === (bd.players||[])[0] ? '<span class="td-host-badge">Host</span>' : ''}
+        </div>`).join('')}
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px">
+      ${players.length < 2 ? 'Aguardando mais primos...' : 'Aguardando o host iniciar o jogo...'}
+    </p>
+  </div>`
+}
+
+function tdRenderGame(room) {
+  const bd      = room.board || {}
+  const isMyTurn = bd.current_player === state.user.nome
+  const content = document.getElementById('game-content')
+  if (!content) return
+
+  // Placar no topo
+  const scoreboard = (bd.players || []).map(p => `
+    <div class="td-score-chip ${p === bd.current_player ? 'td-score-active' : ''}">
+      <span>${bd.avatars?.[p] || '🙂'}</span>
+      <span style="font-size:11px;font-weight:700">${p.split(' ')[0]}</span>
+      <span style="font-size:13px;font-weight:800;color:var(--accent-byts)">${bd.scores?.[p] || 0}</span>
+    </div>`).join('')
+
+  if (bd.phase === 'choosing' && isMyTurn) {
+    content.innerHTML = `
+    <div class="td-game-wrap">
+      <div class="td-scoreboard">${scoreboard}</div>
+      <div class="td-turn-banner">
+        <span style="font-size:32px">${state.user.avatar}</span>
+        <p style="font-size:16px;font-weight:700">É a sua vez!</p>
+        <p style="font-size:13px;color:var(--text-secondary)">Rodada ${bd.round}</p>
+      </div>
+      <div class="td-buttons" style="margin-top:16px">
+        <button class="td-btn td-verdade" onclick="tdChooseOnline('verdade')">🗣️ Verdade</button>
+        <button class="td-btn td-desafio" onclick="tdChooseOnline('desafio')">💥 Desafio</button>
+      </div>
+    </div>`
+  } else if (bd.phase === 'choosing' && !isMyTurn) {
+    content.innerHTML = `
+    <div class="td-game-wrap">
+      <div class="td-scoreboard">${scoreboard}</div>
+      <div class="td-waiting-turn">
+        <span style="font-size:48px">${bd.avatars?.[bd.current_player] || '🙂'}</span>
+        <p style="font-size:16px;font-weight:700">${bd.current_player} está escolhendo...</p>
+        <div class="td-dots"><span>.</span><span>.</span><span>.</span></div>
+      </div>
+    </div>`
+  } else if (bd.phase === 'reveal') {
+    const cardColor = bd.card_type === 'verdade' ? '#6366f1' : '#ef4444'
+    const cardEmoji = bd.card_type === 'verdade' ? '🗣️' : '💥'
+    content.innerHTML = `
+    <div class="td-game-wrap">
+      <div class="td-scoreboard">${scoreboard}</div>
+      <div class="td-reveal-banner">
+        <span>${bd.avatars?.[bd.current_player] || '🙂'}</span>
+        <p style="font-weight:700;color:var(--text-secondary)">${bd.current_player} escolheu:</p>
+      </div>
+      <div class="td-card" style="border-color:${cardColor}40">
+        <div class="td-result">
+          <span style="font-size:36px">${cardEmoji}</span>
+          <p class="td-type" style="color:${cardColor}">${bd.card_type === 'verdade' ? 'VERDADE' : 'DESAFIO'}</p>
+          <p class="td-text">${bd.card_text}</p>
+        </div>
+      </div>
+      ${isMyTurn ? `
+        <div class="td-buttons" style="margin-top:12px">
+          <button class="td-btn td-verdade" onclick="tdCompleteOnline(true)" style="background:rgba(34,197,94,0.15);color:#4ade80">✅ Completei!</button>
+          <button class="td-btn td-desafio" onclick="tdCompleteOnline(false)" style="background:rgba(239,68,68,0.1);color:#f87171">❌ Pulei</button>
+        </div>` : `
+        <p style="text-align:center;font-size:13px;color:var(--text-secondary);margin-top:12px">
+          Aguardando ${bd.current_player} completar...
+        </p>
+        <div class="td-vote-row" id="td-vote-row">
+          <p style="font-size:12px;color:var(--text-muted);text-align:center">Você acha que vai cumprir?</p>
+          <div style="display:flex;gap:8px;justify-content:center">
+            <button class="td-vote-btn" onclick="tdVote('sim')">👍 Sim</button>
+            <button class="td-vote-btn" onclick="tdVote('nao')">👎 Não</button>
+          </div>
+        </div>`}
+    </div>`
+  }
+}
+
+async function tdChooseOnline(type) {
+  const room = state.currentRoom
+  const bd   = { ...room.board }
+  const list = type === 'verdade' ? VERDADES : DESAFIOS
+  const text = list[Math.floor(Math.random() * list.length)]
+
+  bd.phase     = 'reveal'
+  bd.card_type = type
+  bd.card_text = text
+  bd.votes     = {}
+
+  await sb.from('rooms').update({ board: bd }).eq('code', room.code)
+}
+
+async function tdCompleteOnline(completed) {
+  const room = state.currentRoom
+  const bd   = { ...room.board }
+
+  // Credita Byts localmente se completou
+  if (completed) {
+    addByts(15, false)
+    bd.scores = { ...(bd.scores || {}), [state.user.nome]: (bd.scores?.[state.user.nome] || 0) + 15 }
+  }
+
+  // Passa a vez para o próximo jogador
+  const players   = bd.players || []
+  const currIdx   = players.indexOf(bd.current_player)
+  const nextIdx   = (currIdx + 1) % players.length
+  const nextPlayer = players[nextIdx]
+  const newRound  = nextIdx === 0 ? (bd.round || 1) + 1 : bd.round
+
+  // Verifica fim de jogo (10 rodadas completas)
+  if (newRound > 10) {
+    await sb.from('rooms').update({
+      board: bd,
+      status: 'finished',
+      winner: Object.entries(bd.scores || {}).sort((a,b) => b[1]-a[1])[0]?.[0] || '',
+    }).eq('code', room.code)
+    return
+  }
+
+  bd.phase          = 'choosing'
+  bd.current_player = nextPlayer
+  bd.round          = newRound
+  bd.card_type      = ''
+  bd.card_text      = ''
+  bd.votes          = {}
+
+  await sb.from('rooms').update({ board: bd }).eq('code', room.code)
+}
+
+async function tdVote(vote) {
+  const row = document.getElementById('td-vote-row')
+  if (row) row.innerHTML = '<p style="font-size:12px;color:var(--text-muted);text-align:center">Voto registrado! ✅</p>'
+  // Apenas UI feedback — votos são informativos no V1
+}
+
+function tdRenderEnd(room) {
+  const bd      = room.board || {}
+  const scores  = bd.scores || {}
+  const sorted  = Object.entries(scores).sort((a,b) => b[1]-a[1])
+  const winner  = sorted[0]?.[0] || ''
+  const iWon    = winner === state.user.nome
+  const content = document.getElementById('game-content')
+  if (!content) return
+
+  content.innerHTML = `
+  <div class="td-game-wrap" style="align-items:center;gap:16px">
+    <div style="font-size:56px">${iWon ? '🏆' : '🎭'}</div>
+    <h2 style="font-size:20px;font-weight:800;text-align:center">
+      ${iWon ? 'Você venceu! 🎉' : winner + ' venceu!'}
+    </h2>
+    <div style="width:100%;background:var(--bg-card);border-radius:var(--radius-lg);padding:16px">
+      <p style="font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:12px">PLACAR FINAL</p>
+      ${sorted.map(([p,s],i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;${i<sorted.length-1?'border-bottom:1px solid var(--border)':''}">
+          <span style="font-size:18px">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '}</span>
+          <span style="font-size:20px">${bd.avatars?.[p]||'🙂'}</span>
+          <span style="flex:1;font-weight:600">${p}</span>
+          <span style="font-weight:800;color:var(--accent-byts)">${s} 🪙</span>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn-primary" onclick="tdOnline()" style="flex:1">Nova Sala 🎭</button>
+      <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+    </div>
+  </div>`
+  if (state.realtimeChannel) { sb.removeChannel(state.realtimeChannel); state.realtimeChannel = null }
+}
+
+
+// ══════════════════════════════════════════════
+// DESAFIO DE PÊNALTIS
+// ══════════════════════════════════════════════
+const PENALTY_DIRS = ['esquerda', 'centro', 'direita']
+const PENALTY_EMOJIS = { esquerda: '⬅️', centro: '⬆️', direita: '➡️' }
+
+function buildPenaltyMenu() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon">⚽</div>
+    <h2 class="ttt-menu-title">Desafio de Pênaltis</h2>
+    <p class="ttt-menu-sub">Melhor de 5 cobranças</p>
+    <button class="mode-btn mode-online" onclick="penaltyOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Jogar Online</span>
+        <span class="mode-desc">Você cobra, primo defende</span>
+      </div>
+      <span class="mode-reward">+40 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="penaltyVsCPU()">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info">
+        <span class="mode-title">vs Goleiro CPU</span>
+        <span class="mode-desc">Bata pênaltis contra a máquina</span>
+      </div>
+      <span class="mode-reward">+20 🪙</span>
+    </button>
+  </div>`
+}
+
+// ── VS CPU ──────────────────────────────────
+let penCPUScore = { player: 0, cpu: 0 }
+let penCPURound = 0
+let penCPUPhase = 'shooting' // shooting | result
+let penCPUKicks = []
+
+function penaltyVsCPU() {
+  penCPUScore  = { player: 0, cpu: 0 }
+  penCPURound  = 0
+  penCPUPhase  = 'shooting'
+  penCPUKicks  = []
+  penRenderCPU()
+}
+
+function penRenderCPU() {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const kicks = penCPUKicks.map(k => `
+    <div class="pen-kick-row">
+      <span>${k.dir === k.save ? '🧤' : '⚽'}</span>
+      <span class="pen-kick-label">${PENALTY_EMOJIS[k.dir]} ${k.dir === k.save ? 'Defendido' : 'GOL!'}</span>
+      <span style="color:${k.dir===k.save?'#ef4444':'#22c55e'};font-weight:700">${k.dir===k.save?'-1':'+1'}</span>
+    </div>`).join('')
+
+  content.innerHTML = `
+  <div class="pen-wrap">
+    <div class="pen-scoreboard">
+      <div class="pen-score-box">
+        <span class="pen-score-label">${state.user.avatar} Você</span>
+        <span class="pen-score-val" style="color:#22c55e">${penCPUScore.player}</span>
+      </div>
+      <div class="pen-score-mid">
+        <span style="font-size:11px;color:var(--text-muted)">Cobranças</span>
+        <span style="font-size:20px;font-weight:800;color:var(--primary)">${penCPURound}/5</span>
+      </div>
+      <div class="pen-score-box">
+        <span class="pen-score-label">🤖 CPU</span>
+        <span class="pen-score-val" style="color:#ef4444">${penCPUScore.cpu}</span>
+      </div>
+    </div>
+
+    <div class="pen-field">
+      <div class="pen-goal">
+        <div class="pen-goal-post">
+          <button class="pen-dir-btn ${penCPUPhase!=='shooting'?'disabled':''}"
+            onclick="penShootCPU('esquerda')" ${penCPUPhase!=='shooting'?'disabled':''}>
+            ⬅️
+          </button>
+          <button class="pen-dir-btn ${penCPUPhase!=='shooting'?'disabled':''}"
+            onclick="penShootCPU('centro')" ${penCPUPhase!=='shooting'?'disabled':''}>
+            ⬆️
+          </button>
+          <button class="pen-dir-btn ${penCPUPhase!=='shooting'?'disabled':''}"
+            onclick="penShootCPU('direita')" ${penCPUPhase!=='shooting'?'disabled':''}>
+            ➡️
+          </button>
+        </div>
+        <div class="pen-field-art">🥅</div>
+      </div>
+    </div>
+
+    <p class="pen-instruction" id="pen-instruction">
+      ${penCPUPhase==='shooting' ? '⚽ Escolha o canto para chutar!' : ''}
+    </p>
+
+    ${kicks.length ? `<div class="pen-history">${kicks}</div>` : ''}
+  </div>`
+}
+
+function penShootCPU(dir) {
+  if (penCPUPhase !== 'shooting') return
+  penCPUPhase = 'result'
+  penCPURound++
+
+  const save = PENALTY_DIRS[Math.floor(Math.random() * 3)]
+  const isGoal = dir !== save
+
+  if (isGoal) penCPUScore.player++
+  penCPUKicks.push({ dir, save, isGoal })
+
+  // Atualiza instrução e anima
+  const instr = document.getElementById('pen-instruction')
+  if (instr) {
+    instr.textContent = isGoal
+      ? `⚽ GOL! CPU foi para ${PENALTY_EMOJIS[save]}`
+      : `🧤 Defendido! CPU foi para ${PENALTY_EMOJIS[save]}`
+    instr.style.color = isGoal ? '#22c55e' : '#ef4444'
+  }
+
+  // Verifica fim (5 cobranças ou impossível recuperar)
+  if (penCPURound >= 5) {
+    setTimeout(() => penEndCPU(), 1500)
+    return
+  }
+
+  setTimeout(() => {
+    penCPUPhase = 'shooting'
+    penRenderCPU()
+  }, 1500)
+}
+
+function penEndCPU() {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const won = penCPUScore.player > penCPUScore.cpu
+  const draw = penCPUScore.player === penCPUScore.cpu
+  if (won) addByts(20, true)
+
+  content.innerHTML = `
+  <div class="pen-wrap" style="align-items:center;gap:16px">
+    <div style="font-size:64px">${won?'🏆':draw?'🤝':'😤'}</div>
+    <h2 style="font-size:22px;font-weight:800;text-align:center;color:${won?'#22c55e':draw?'#f59e0b':'#ef4444'}">
+      ${won?'Você venceu!':draw?'Empate!':'CPU venceu!'}
+    </h2>
+    <div class="pen-final-score">
+      <span>${state.user.avatar} ${penCPUScore.player}</span>
+      <span style="color:var(--text-muted);font-size:18px">x</span>
+      <span>${penCPUScore.cpu} 🤖</span>
+    </div>
+    ${won ? '<p style="color:var(--accent-byts);font-weight:700">+20 Byts! 🪙</p>' : ''}
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn-primary" onclick="penaltyVsCPU()" style="flex:1">Revanche ⚽</button>
+      <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+    </div>
+  </div>`
+}
+
+// ── ONLINE ──────────────────────────────────
+async function penaltyOnline() {
+  showToast('Criando sala... ⏳')
+  const code = genCode()
+  const initBoard = {
+    phase: 'waiting',         // waiting|choosing|reveal|finished
+    round: 0,
+    shooter: '',              // nome do cobrador desta rodada
+    shooter_dir: '',          // escolha secreta do cobrador
+    keeper_dir: '',           // escolha secreta do goleiro
+    score_shooter: 0,
+    score_keeper: 0,
+    history: [],
+  }
+
+  const { data, error } = await sb.from('rooms').insert({
+    code,
+    game: 'penalty',
+    host_name: state.user.nome,
+    status: 'waiting',
+    board: initBoard,
+    current_turn: state.user.nome,
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+
+  state.currentRoom = data
+  state.mySymbol    = 'shooter' // host começa como cobrador
+
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+  document.querySelector('.waiting-title').textContent = 'Aguardando goleiro... ⚽'
+  document.querySelector('.waiting-sub').textContent   = 'Mande o código para um primo'
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      const room = payload.new
+      if (room.status === 'playing') {
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent = '⚽ Desafio de Pênaltis'
+        penRenderOnline(room)
+      }
+      if (room.status === 'playing') penRenderOnline(room)
+      if (room.status === 'finished') penRenderEnd(room)
+    })
+    .subscribe()
+}
+
+async function penaltyJoinRoom(code) {
+  const { data: room, error } = await sb
+    .from('rooms').select('*').eq('code', code).eq('status', 'waiting').maybeSingle()
+  if (error || !room || room.game !== 'penalty') return false
+  if (room.host_name === state.user.nome) { showToast('Você criou esta sala!'); return true }
+
+  // Inicia o jogo: host cobra, guest é goleiro
+  const bd = { ...room.board,
+    phase: 'choosing',
+    round: 1,
+    shooter: room.host_name,
+    shooter_dir: '',
+    keeper_dir: '',
+  }
+
+  const { data: updated } = await sb.from('rooms')
+    .update({ guest_name: state.user.nome, status: 'playing', board: bd })
+    .eq('code', code).select().maybeSingle()
+
+  state.currentRoom = updated || room
+  state.mySymbol    = 'keeper'
+
+  document.getElementById('game-title-bar').textContent = '⚽ Desafio de Pênaltis'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  penRenderOnline(state.currentRoom)
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      if (payload.new.status === 'playing')  penRenderOnline(payload.new)
+      if (payload.new.status === 'finished') penRenderEnd(payload.new)
+    })
+    .subscribe()
+  return true
+}
+
+function penRenderOnline(room) {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const bd     = room.board || {}
+  const isShooter = state.mySymbol === 'shooter'
+  const myRole    = isShooter ? 'cobrador' : 'goleiro'
+  const myChose   = isShooter ? bd.shooter_dir : bd.keeper_dir
+  const oppChose  = isShooter ? bd.keeper_dir  : bd.shooter_dir
+
+  const history = (bd.history || []).map(h => `
+    <div class="pen-kick-row">
+      <span>${h.goal ? '⚽' : '🧤'}</span>
+      <span class="pen-kick-label">
+        ${PENALTY_EMOJIS[h.shot]} vs ${PENALTY_EMOJIS[h.save]}
+      </span>
+      <span style="color:${h.goal?'#22c55e':'#ef4444'};font-weight:700">
+        ${h.goal ? 'GOL' : 'DEFESA'}
+      </span>
+    </div>`).join('')
+
+  // Fase: escolhendo
+  if (bd.phase === 'choosing') {
+    content.innerHTML = `
+    <div class="pen-wrap">
+      <div class="pen-scoreboard">
+        <div class="pen-score-box">
+          <span class="pen-score-label">⚽ ${room.host_name}</span>
+          <span class="pen-score-val" style="color:#22c55e">${bd.score_shooter||0}</span>
+        </div>
+        <div class="pen-score-mid">
+          <span style="font-size:11px;color:var(--text-muted)">Cobranças</span>
+          <span style="font-size:20px;font-weight:800;color:var(--primary)">${bd.round||1}/5</span>
+        </div>
+        <div class="pen-score-box">
+          <span class="pen-score-label">🧤 ${room.guest_name}</span>
+          <span class="pen-score-val" style="color:#6366f1">${bd.score_keeper||0}</span>
+        </div>
+      </div>
+
+      <div class="pen-role-banner">
+        <span style="font-size:36px">${isShooter ? '⚽' : '🧤'}</span>
+        <div>
+          <p style="font-weight:700;font-size:15px">Você é o ${myRole}</p>
+          <p style="font-size:12px;color:var(--text-secondary)">
+            ${isShooter ? 'Escolha o canto secretamente' : 'Para onde você vai?'}
+          </p>
+        </div>
+      </div>
+
+      ${!myChose ? `
+        <div class="pen-goal">
+          <div class="pen-goal-post">
+            <button class="pen-dir-btn" onclick="penChooseOnline('esquerda')">⬅️<br/><span>Esq</span></button>
+            <button class="pen-dir-btn" onclick="penChooseOnline('centro')">⬆️<br/><span>Centro</span></button>
+            <button class="pen-dir-btn" onclick="penChooseOnline('direita')">➡️<br/><span>Dir</span></button>
+          </div>
+          <div class="pen-field-art">${isShooter ? '🏃' : '🥅'}</div>
+        </div>
+        <p class="pen-instruction">${isShooter ? '🤫 Escolha o canto em segredo!' : '🤫 Para onde você vai mergulhar?'}</p>
+      ` : `
+        <div class="pen-waiting-choice">
+          <div style="font-size:48px">${myChose ? PENALTY_EMOJIS[myChose] : '⏳'}</div>
+          <p style="font-weight:700">Escolha feita! ✅</p>
+          <p style="font-size:13px;color:var(--text-secondary)">Aguardando ${oppChose ? 'revelação' : 'oponente'}...</p>
+        </div>
+      `}
+
+      ${history ? `<div class="pen-history">${history}</div>` : ''}
+    </div>`
+  }
+
+  // Fase: revelar (ambos escolheram)
+  if (bd.phase === 'reveal') {
+    penRevealOnline(room)
+  }
+}
+
+async function penChooseOnline(dir) {
+  const room = state.currentRoom
+  const bd   = { ...room.board }
+  const isShooter = state.mySymbol === 'shooter'
+
+  if (isShooter) bd.shooter_dir = dir
+  else           bd.keeper_dir  = dir
+
+  // Se ambos escolheram → fase reveal
+  const otherChose = isShooter ? bd.keeper_dir : bd.shooter_dir
+  if (otherChose && otherChose !== '') {
+    bd.phase = 'reveal'
+  }
+
+  await sb.from('rooms').update({ board: bd }).eq('code', room.code)
+}
+
+function penRevealOnline(room) {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const bd      = room.board || {}
+  const isGoal  = bd.shooter_dir !== bd.keeper_dir
+  const isShooter = state.mySymbol === 'shooter'
+
+  content.innerHTML = `
+  <div class="pen-wrap" style="align-items:center;gap:16px">
+    <div class="pen-scoreboard">
+      <div class="pen-score-box">
+        <span class="pen-score-label">⚽ ${room.host_name}</span>
+        <span class="pen-score-val" style="color:#22c55e">${bd.score_shooter||0}</span>
+      </div>
+      <div class="pen-score-mid">
+        <span style="font-size:11px;color:var(--text-muted)">Cobranças</span>
+        <span style="font-size:20px;font-weight:800;color:var(--primary)">${bd.round||1}/5</span>
+      </div>
+      <div class="pen-score-box">
+        <span class="pen-score-label">🧤 ${room.guest_name}</span>
+        <span class="pen-score-val" style="color:#6366f1">${bd.score_keeper||0}</span>
+      </div>
+    </div>
+
+    <div class="pen-reveal-anim">
+      <div class="pen-reveal-col">
+        <p style="font-size:12px;color:var(--text-secondary)">⚽ Cobrou</p>
+        <span style="font-size:48px">${PENALTY_EMOJIS[bd.shooter_dir]}</span>
+        <p style="font-size:13px;font-weight:700">${bd.shooter_dir}</p>
+      </div>
+      <div style="font-size:28px;font-weight:900;color:var(--text-muted)">VS</div>
+      <div class="pen-reveal-col">
+        <p style="font-size:12px;color:var(--text-secondary)">🧤 Defendeu</p>
+        <span style="font-size:48px">${PENALTY_EMOJIS[bd.keeper_dir]}</span>
+        <p style="font-size:13px;font-weight:700">${bd.keeper_dir}</p>
+      </div>
+    </div>
+
+    <div class="pen-result-banner" style="background:${isGoal?'rgba(34,197,94,0.1)':'rgba(99,102,241,0.1)'};border-color:${isGoal?'rgba(34,197,94,0.3)':'rgba(99,102,241,0.3)'}">
+      <span style="font-size:40px">${isGoal ? '⚽' : '🧤'}</span>
+      <p style="font-size:20px;font-weight:800;color:${isGoal?'#22c55e':'#818cf8'}">
+        ${isGoal ? 'GOL!' : 'DEFENDIDO!'}
+      </p>
+      <p style="font-size:13px;color:var(--text-secondary)">
+        ${isGoal
+          ? (isShooter ? 'Você marcou! 🎉' : 'Tomou gol... 😤')
+          : (isShooter ? 'Defenderam! 😤' : 'Você defendeu! 🎉')}
+      </p>
+    </div>
+  </div>`
+
+  // Próxima cobrança após 2.5s (apenas o shooter avança)
+  if (state.mySymbol === 'shooter') {
+    setTimeout(async () => {
+      const r = state.currentRoom
+      const b = { ...r.board }
+      b.score_shooter = (b.score_shooter||0) + (isGoal ? 1 : 0)
+      b.score_keeper  = (b.score_keeper||0)  + (isGoal ? 0 : 1)
+      b.history       = [...(b.history||[]), { shot: b.shooter_dir, save: b.keeper_dir, goal: isGoal }]
+      b.round         = (b.round||1) + 1
+      b.shooter_dir   = ''
+      b.keeper_dir    = ''
+
+      if (b.round > 5) {
+        // Fim
+        const shooterWon = b.score_shooter > b.score_keeper
+        await sb.from('rooms').update({
+          board: b,
+          status: 'finished',
+          winner: shooterWon ? r.host_name : r.guest_name,
+        }).eq('code', r.code)
+      } else {
+        b.phase = 'choosing'
+        await sb.from('rooms').update({ board: b }).eq('code', r.code)
+      }
+    }, 2500)
+  }
+}
+
+function penRenderEnd(room) {
+  const bd      = room.board || {}
+  const iWon    = room.winner === state.user.nome
+  const isDraw  = !room.winner
+  const content = document.getElementById('game-content')
+  if (!content) return
+  if (iWon) addByts(40, true)
+
+  content.innerHTML = `
+  <div class="pen-wrap" style="align-items:center;gap:16px">
+    <div style="font-size:64px">${iWon?'🏆':isDraw?'🤝':'😤'}</div>
+    <h2 style="font-size:22px;font-weight:800;text-align:center;color:${iWon?'#22c55e':isDraw?'#f59e0b':'#ef4444'}">
+      ${iWon?'Você venceu!':isDraw?'Empate!':'Você perdeu!'}
+    </h2>
+    <div class="pen-final-score">
+      <span>⚽ ${bd.score_shooter||0}</span>
+      <span style="color:var(--text-muted)">x</span>
+      <span>${bd.score_keeper||0} 🧤</span>
+    </div>
+    ${iWon ? '<p style="color:var(--accent-byts);font-weight:700">+40 Byts! 🪙</p>' : ''}
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn-primary" onclick="penaltyOnline()" style="flex:1">Revanche ⚽</button>
+      <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+    </div>
+  </div>`
+  if (state.realtimeChannel) { sb.removeChannel(state.realtimeChannel); state.realtimeChannel = null }
+}
+
+
+// ══════════════════════════════════════════════
+// DAMA — LÓGICA DO TABULEIRO
+// ══════════════════════════════════════════════
+// Peças: 1=vermelho normal, 2=vermelho dama, -1=preto normal, -2=preto dama, 0=vazio
+// Vermelho sempre começa embaixo (rows 5-7), Preto em cima (rows 0-2)
+
+function checkersInitBoard() {
+  const b = Array(8).fill(null).map(() => Array(8).fill(0))
+  for (let r = 0; r < 3; r++)
+    for (let c = 0; c < 8; c++)
+      if ((r + c) % 2 === 1) b[r][c] = -1  // preto
+  for (let r = 5; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if ((r + c) % 2 === 1) b[r][c] = 1   // vermelho
+  return b
+}
+
+function checkersGetMoves(board, r, c, captureOnly = false) {
+  const piece = board[r][c]
+  if (!piece) return []
+  const isRed  = piece > 0
+  const isKing = Math.abs(piece) === 2
+  const dirs   = []
+  if (isRed || isKing)  dirs.push([-1, -1], [-1, 1])   // vermelho sobe
+  if (!isRed || isKing) dirs.push([1, -1],  [1, 1])    // preto desce
+
+  const moves    = []
+  const captures = []
+
+  for (const [dr, dc] of dirs) {
+    const nr = r + dr, nc = c + dc
+    if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue
+    if (board[nr][nc] === 0 && !captureOnly) {
+      moves.push({ from: [r,c], to: [nr,nc], capture: null })
+    }
+    // Captura
+    const er = r + dr*2, ec = c + dc*2
+    if (er < 0 || er > 7 || ec < 0 || ec > 7) continue
+    const mid = board[nr][nc]
+    if (mid !== 0 && (mid > 0) !== isRed && board[er][ec] === 0) {
+      captures.push({ from: [r,c], to: [er,ec], capture: [nr,nc] })
+    }
+  }
+  return captures.length ? captures : (captureOnly ? [] : moves)
+}
+
+function checkersAllMoves(board, isRed) {
+  const all = []
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c]
+      if (!p) continue
+      if ((p > 0) !== isRed) continue
+      all.push(...checkersGetMoves(board, r, c))
+    }
+  // Se há capturas disponíveis, somente capturas são válidas (obrigatório)
+  const caps = all.filter(m => m.capture)
+  return caps.length ? caps : all
+}
+
+function checkersApplyMove(board, move) {
+  const b = board.map(r => [...r])
+  const [fr, fc] = move.from
+  const [tr, tc] = move.to
+  b[tr][tc] = b[fr][fc]
+  b[fr][fc] = 0
+  if (move.capture) b[move.capture[0]][move.capture[1]] = 0
+  // Promove a dama
+  if (b[tr][tc] === 1  && tr === 0) b[tr][tc] = 2
+  if (b[tr][tc] === -1 && tr === 7) b[tr][tc] = -2
+  return b
+}
+
+function checkersWinner(board) {
+  let reds = 0, blacks = 0
+  for (const row of board)
+    for (const c of row) {
+      if (c > 0) reds++
+      if (c < 0) blacks++
+    }
+  if (!reds)   return 'black'
+  if (!blacks) return 'red'
+  return null
+}
+
+// ── UI STATE ───────────────────────────────
+let ckBoard, ckSelected, ckTurn, ckMoves, ckMode, ckMyColor
+let ckScoreRed = 0, ckScoreBlack = 0, ckRound = 0
+
+// ══════════════════════════════════════════════
+// DAMA — MENU
+// ══════════════════════════════════════════════
+function buildCheckersMenu() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon">🔴</div>
+    <h2 class="ttt-menu-title">Dama</h2>
+    <p class="ttt-menu-sub">Clássico jogo de tabuleiro</p>
+    <button class="mode-btn mode-online" onclick="checkersOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Jogar Online</span>
+        <span class="mode-desc">Desafie um primo em tempo real</span>
+      </div>
+      <span class="mode-reward">+80 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="checkersVsCPU()">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info">
+        <span class="mode-title">vs CPU</span>
+        <span class="mode-desc">Pratique contra a máquina</span>
+      </div>
+      <span class="mode-reward">+40 🪙</span>
+    </button>
+  </div>`
+}
+
+// ══════════════════════════════════════════════
+// DAMA — VS CPU
+// ══════════════════════════════════════════════
+function checkersVsCPU() {
+  ckMode     = 'cpu'
+  ckMyColor  = 'red'
+  ckBoard    = checkersInitBoard()
+  ckSelected = null
+  ckTurn     = 'red'
+  ckMoves    = checkersAllMoves(ckBoard, true)
+  ckScoreRed = 0; ckScoreBlack = 0; ckRound = 0
+  ckRenderBoard()
+}
+
+function ckRenderBoard(highlightMoves = []) {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const myIsRed = ckMyColor === 'red'
+  const isMyTurn = ckTurn === ckMyColor
+
+  // Contar peças
+  let reds = 0, blacks = 0
+  ckBoard.flat().forEach(c => { if (c > 0) reds++; if (c < 0) blacks++ })
+
+  const statusText = isMyTurn
+    ? (ckMode === 'cpu' ? '⚡ Sua vez!' : '⚡ Sua vez!')
+    : (ckMode === 'cpu' ? '🤖 CPU pensando...' : '⏳ Vez do oponente...')
+
+  const hlSet = new Set(highlightMoves.map(m => m.to[0]+','+m.to[1]))
+  const selMoveTargets = ckSelected
+    ? new Set(ckMoves.filter(m=>m.from[0]===ckSelected[0]&&m.from[1]===ckSelected[1]).map(m=>m.to[0]+','+m.to[1]))
+    : new Set()
+
+  let rows = ''
+  for (let r = 0; r < 8; r++) {
+    const displayR = myIsRed ? r : 7 - r
+    rows += '<div class="ck-row">'
+    for (let c = 0; c < 8; c++) {
+      const displayC = myIsRed ? c : 7 - c
+      const isDark   = (displayR + displayC) % 2 === 1
+      const piece    = ckBoard[displayR][displayC]
+      const key      = displayR+','+displayC
+      const isSelected = ckSelected && ckSelected[0]===displayR && ckSelected[1]===displayC
+      const isTarget   = selMoveTargets.has(key)
+      const isMovable  = isMyTurn && isDark && piece !== 0 &&
+        (piece > 0) === (ckMyColor === 'red') &&
+        ckMoves.some(m => m.from[0]===displayR && m.from[1]===displayC)
+
+      let cellClass = 'ck-cell ' + (isDark ? 'ck-dark' : 'ck-light')
+      if (isSelected)  cellClass += ' ck-selected'
+      if (isTarget)    cellClass += ' ck-target'
+      if (isMovable && !ckSelected) cellClass += ' ck-movable'
+
+      let inner = ''
+      if (piece !== 0) {
+        const isRed  = piece > 0
+        const isKing = Math.abs(piece) === 2
+        inner = `<div class="ck-piece ${isRed?'ck-red':'ck-black'}${isKing?' ck-king':''}">${isKing?'♛':''}</div>`
+      } else if (isTarget) {
+        inner = '<div class="ck-target-dot"></div>'
+      }
+
+      rows += `<div class="${cellClass}" onclick="ckClick(${displayR},${displayC})">${inner}</div>`
+    }
+    rows += '</div>'
+  }
+
+  content.innerHTML = `
+  <div class="ck-wrap">
+    <div class="ck-header">
+      <div class="ck-player-info ${ckTurn==='black'?'ck-active':''}">
+        <div class="ck-piece ck-black" style="width:20px;height:20px;margin:0"></div>
+        <span>${ckMode==='cpu'?'🤖 CPU':''} ${blacks}🔵</span>
+      </div>
+      <div class="ck-status-center">
+        <span style="font-size:11px;color:var(--text-muted)">Dama</span>
+      </div>
+      <div class="ck-player-info ${ckTurn==='red'?'ck-active':''}" style="flex-direction:row-reverse">
+        <div class="ck-piece ck-red" style="width:20px;height:20px;margin:0"></div>
+        <span>${state.user.avatar} ${reds}🔴</span>
+      </div>
+    </div>
+    <p class="ck-status" id="ck-status">${statusText}</p>
+    <div class="ck-board">${rows}</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn-secondary" style="flex:1;font-size:13px" onclick="${ckMode==='cpu'?'checkersVsCPU()':'closeGame()'}">
+        ${ckMode==='cpu'?'🔄 Reiniciar':'← Sair'}
+      </button>
+    </div>
+  </div>`
+}
+
+function ckClick(r, c) {
+  if (ckTurn !== ckMyColor) return
+  const piece = ckBoard[r][c]
+
+  // Se clicou numa peça própria — seleciona
+  if (piece !== 0 && (piece > 0) === (ckMyColor === 'red')) {
+    const pieceMoves = ckMoves.filter(m => m.from[0]===r && m.from[1]===c)
+    if (pieceMoves.length) {
+      ckSelected = [r, c]
+      ckRenderBoard(pieceMoves)
+      return
+    }
+  }
+
+  // Se tem peça selecionada e clicou num destino válido
+  if (ckSelected) {
+    const move = ckMoves.find(m =>
+      m.from[0]===ckSelected[0] && m.from[1]===ckSelected[1] &&
+      m.to[0]===r && m.to[1]===c
+    )
+    if (move) {
+      ckBoard    = checkersApplyMove(ckBoard, move)
+      ckSelected = null
+
+      // Verifica captura múltipla
+      const extraCaps = checkersGetMoves(ckBoard, r, c, true)
+      if (move.capture && extraCaps.length) {
+        ckMoves   = extraCaps
+        ckSelected = [r, c]
+        ckRenderBoard(extraCaps)
+        return
+      }
+
+      const winner = checkersWinner(ckBoard)
+      if (winner) { ckEndGame(winner); return }
+
+      ckTurn  = ckTurn === 'red' ? 'black' : 'red'
+      ckMoves = checkersAllMoves(ckBoard, ckTurn === 'red')
+
+      if (!ckMoves.length) { ckEndGame(ckMyColor); return }
+
+      if (ckMode === 'cpu' && ckTurn !== ckMyColor) {
+        ckRenderBoard()
+        setTimeout(ckCPUMove, 600)
+      } else if (ckMode === 'online') {
+        ckSyncOnline()
+      } else {
+        ckRenderBoard()
+      }
+      return
+    }
+    ckSelected = null
+  }
+  ckRenderBoard()
+}
+
+function ckCPUMove() {
+  const moves = checkersAllMoves(ckBoard, false) // false = preto
+  if (!moves.length) { ckEndGame('red'); return }
+
+  // CPU prefere capturas, senão move aleatório
+  const caps = moves.filter(m => m.capture)
+  const move = caps.length
+    ? caps[Math.floor(Math.random() * caps.length)]
+    : moves[Math.floor(Math.random() * moves.length)]
+
+  ckBoard = checkersApplyMove(ckBoard, move)
+
+  // Captura múltipla CPU
+  const extraCaps = checkersGetMoves(ckBoard, move.to[0], move.to[1], true)
+  if (move.capture && extraCaps.length) {
+    const move2 = extraCaps[Math.floor(Math.random() * extraCaps.length)]
+    ckBoard = checkersApplyMove(ckBoard, move2)
+  }
+
+  const winner = checkersWinner(ckBoard)
+  if (winner) { ckEndGame(winner); return }
+
+  ckTurn  = 'red'
+  ckMoves = checkersAllMoves(ckBoard, true)
+  if (!ckMoves.length) { ckEndGame('black'); return }
+  ckRenderBoard()
+}
+
+function ckEndGame(winner) {
+  const iWon = (winner === 'red' && ckMyColor === 'red') ||
+               (winner === 'black' && ckMyColor === 'black')
+  if (iWon) addByts(ckMode === 'online' ? 80 : 40, true)
+  const content = document.getElementById('game-content')
+  if (!content) return
+  content.innerHTML = `
+  <div class="ttt-wrap" style="align-items:center;gap:20px;padding:24px 0">
+    <div style="font-size:64px">${iWon?'🏆':'😤'}</div>
+    <h2 style="font-size:22px;font-weight:800;color:${iWon?'#22c55e':'#ef4444'}">
+      ${iWon?'Você venceu!':'Você perdeu!'}
+    </h2>
+    ${iWon?`<p style="color:var(--accent-byts);font-weight:700">+${ckMode==='online'?80:40} Byts! 🪙</p>`:''}
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn-primary" onclick="${ckMode==='cpu'?'checkersVsCPU()':'checkersOnline()'}" style="flex:1">Revanche 🔄</button>
+      <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+    </div>
+  </div>`
+  if (ckMode === 'online' && state.realtimeChannel) {
+    sb.removeChannel(state.realtimeChannel); state.realtimeChannel = null
+  }
+}
+
+// ══════════════════════════════════════════════
+// DAMA — ONLINE
+// ══════════════════════════════════════════════
+async function checkersOnline() {
+  showToast('Criando sala... ⏳')
+  const code     = genCode()
+  const initBoard = checkersInitBoard()
+
+  const { data, error } = await sb.from('rooms').insert({
+    code,
+    game: 'checkers',
+    host_name: state.user.nome,
+    status: 'waiting',
+    board: { grid: initBoard, turn: 'red' },
+    current_turn: state.user.nome,
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+
+  state.currentRoom = data
+  ckMode    = 'online'
+  ckMyColor = 'red'   // host = vermelho
+
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+  document.querySelector('.waiting-title').textContent = 'Aguardando oponente... 🔴'
+  document.querySelector('.waiting-sub').textContent   = 'Você joga com as peças vermelhas'
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      const room = payload.new
+      if (room.status === 'playing') {
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent = '🔴 Dama'
+        ckLoadOnline(room)
+      }
+      if (room.status === 'playing') ckLoadOnline(room)
+      if (room.status === 'finished') ckEndGame(room.winner === state.user.nome ? ckMyColor : (ckMyColor==='red'?'black':'red'))
+    })
+    .subscribe()
+}
+
+async function checkersJoinRoom(code) {
+  const { data: room, error } = await sb
+    .from('rooms').select('*').eq('code', code).eq('status', 'waiting').maybeSingle()
+  if (error || !room || room.game !== 'checkers') return false
+  if (room.host_name === state.user.nome) { showToast('Você criou esta sala!'); return true }
+
+  ckMode    = 'online'
+  ckMyColor = 'black'  // guest = preto
+
+  const { data: updated } = await sb.from('rooms')
+    .update({ guest_name: state.user.nome, status: 'playing' })
+    .eq('code', code).select().maybeSingle()
+
+  state.currentRoom = updated || room
+  document.getElementById('game-title-bar').textContent = '🔴 Dama'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  ckLoadOnline(state.currentRoom)
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      if (payload.new.status === 'playing')  ckLoadOnline(payload.new)
+      if (payload.new.status === 'finished') ckEndGame(payload.new.winner === state.user.nome ? ckMyColor : (ckMyColor==='red'?'black':'red'))
+    })
+    .subscribe()
+  return true
+}
+
+function ckLoadOnline(room) {
+  const bd   = room.board || {}
+  ckBoard    = bd.grid || checkersInitBoard()
+  ckTurn     = bd.turn || 'red'
+  ckSelected = null
+  ckMoves    = checkersAllMoves(ckBoard, ckTurn === 'red')
+  ckRenderBoard()
+}
+
+async function ckSyncOnline() {
+  const room = state.currentRoom
+  const winner = checkersWinner(ckBoard)
+
+  await sb.from('rooms').update({
+    board: { grid: ckBoard, turn: ckTurn },
+    current_turn: ckTurn === 'red' ? room.host_name : room.guest_name,
+    ...(winner ? { status: 'finished', winner: winner === ckMyColor ? state.user.nome : (ckMyColor==='red'?room.guest_name:room.host_name) } : {}),
+  }).eq('code', room.code)
+  ckRenderBoard()
+}
+
+
+// ══════════════════════════════════════════════
+// DOMINÓ — LÓGICA
+// ══════════════════════════════════════════════
+function dominoCreateSet() {
+  const tiles = []
+  for (let a = 0; a <= 6; a++)
+    for (let b = a; b <= 6; b++)
+      tiles.push([a, b])
+  return tiles
+}
+
+function dominoShuffle(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function dominoDeal() {
+  const shuffled = dominoShuffle(dominoCreateSet())
+  return {
+    hand1:  shuffled.slice(0, 7),
+    hand2:  shuffled.slice(7, 14),
+    boneyard: shuffled.slice(14),
+    board:  [],           // peças no tabuleiro: [{tile, side}]
+    leftEnd:  null,       // valor da extremidade esquerda
+    rightEnd: null,       // valor da extremidade direita
+    turn: 'p1',           // p1 | p2
+    passes: 0,            // passes consecutivos → empate
+    winner: null,
+  }
+}
+
+function dominoCanPlay(tile, leftEnd, rightEnd) {
+  if (leftEnd === null) return true
+  return tile.includes(leftEnd) || tile.includes(rightEnd)
+}
+
+function dominoPlayTile(state, tileIdx, side, isP1) {
+  const hand  = isP1 ? [...state.hand1] : [...state.hand2]
+  const tile  = hand[tileIdx]
+  hand.splice(tileIdx, 1)
+
+  let placed = [...tile]
+  const board = [...state.board]
+
+  if (board.length === 0) {
+    state.leftEnd  = tile[0]
+    state.rightEnd = tile[1]
+    board.push({ tile: placed, side: 'center' })
+  } else if (side === 'left') {
+    if (placed[1] !== state.leftEnd) placed = [placed[1], placed[0]]
+    state.leftEnd = placed[0]
+    board.unshift({ tile: placed, side: 'left' })
+  } else {
+    if (placed[0] !== state.rightEnd) placed = [placed[1], placed[0]]
+    state.rightEnd = placed[1]
+    board.push({ tile: placed, side: 'right' })
+  }
+
+  if (isP1) state.hand1 = hand
+  else      state.hand2 = hand
+  state.board   = board
+  state.passes  = 0
+  state.turn    = isP1 ? 'p2' : 'p1'
+
+  // Verifica vitória (mão vazia)
+  if (hand.length === 0) state.winner = isP1 ? 'p1' : 'p2'
+
+  return state
+}
+
+function dominoPass(state, isP1) {
+  // Tenta comprar do boneyard primeiro
+  if (state.boneyard.length > 0) {
+    const drawn = state.boneyard.pop()
+    if (isP1) state.hand1.push(drawn)
+    else      state.hand2.push(drawn)
+    return { ...state, passes: 0 }
+  }
+  // Sem pedras para comprar — passa a vez
+  state.passes++
+  state.turn = isP1 ? 'p2' : 'p1'
+  if (state.passes >= 2) state.winner = 'draw'
+  return state
+}
+
+// Conta pontos da mão (menor = melhor)
+function dominoHandScore(hand) {
+  return hand.reduce((s, t) => s + t[0] + t[1], 0)
+}
+
+// ── ESTADO UI ──────────────────────────────
+let dmState, dmMode, dmMyRole, dmSelected
+
+// ══════════════════════════════════════════════
+// DOMINÓ — MENU
+// ══════════════════════════════════════════════
+function buildDominoMenu() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon" style="font-size:48px">🁣</div>
+    <h2 class="ttt-menu-title">Dominó</h2>
+    <p class="ttt-menu-sub">Clássico jogo de pedras — 2 jogadores</p>
+    <button class="mode-btn mode-online" onclick="dominoOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Jogar Online</span>
+        <span class="mode-desc">Desafie um primo em tempo real</span>
+      </div>
+      <span class="mode-reward">+60 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="dominoVsCPU()">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info">
+        <span class="mode-title">vs CPU</span>
+        <span class="mode-desc">Pratique contra a máquina</span>
+      </div>
+      <span class="mode-reward">+30 🪙</span>
+    </button>
+  </div>`
+}
+
+// ══════════════════════════════════════════════
+// DOMINÓ — VS CPU
+// ══════════════════════════════════════════════
+function dominoVsCPU() {
+  dmMode   = 'cpu'
+  dmMyRole = 'p1'
+  dmState  = dominoDeal()
+  dmSelected = null
+  dmRender()
+}
+
+function dmRender() {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const s      = dmState
+  const isMyTurn = s.turn === dmMyRole
+  const myHand  = dmMyRole === 'p1' ? s.hand1 : s.hand2
+  const oppCount = dmMyRole === 'p1' ? s.hand2.length : s.hand1.length
+
+  // Verifica quais peças da mão podem jogar
+  const playable = myHand.map(t =>
+    s.board.length === 0 || dominoCanPlay(t, s.leftEnd, s.rightEnd)
+  )
+  const hasPlay  = playable.some(Boolean)
+
+  // Renderiza tabuleiro (scroll horizontal)
+  const boardHTML = s.board.length === 0
+    ? '<div class="dm-board-empty">Jogue a primeira pedra!</div>'
+    : s.board.map(({ tile }) =>
+        `<div class="dm-tile dm-tile-board">
+          <span>${tile[0]}</span>
+          <div class="dm-divider"></div>
+          <span>${tile[1]}</span>
+        </div>`
+      ).join('<div class="dm-connector">—</div>')
+
+  // Mão do jogador
+  const handHTML = myHand.map((tile, i) => {
+    const canPlay = isMyTurn && playable[i]
+    const isSel   = dmSelected === i
+    return `<button class="dm-tile dm-tile-hand ${canPlay ? 'dm-playable' : ''} ${isSel ? 'dm-selected' : ''}"
+      onclick="${isMyTurn && canPlay ? `dmSelectTile(${i})` : ''}"
+      ${!canPlay || !isMyTurn ? 'disabled' : ''}>
+      <span>${tile[0]}</span>
+      <div class="dm-divider"></div>
+      <span>${tile[1]}</span>
+    </button>`
+  }).join('')
+
+  // Botões de lado (aparecem após selecionar uma peça)
+  let sideHTML = ''
+  if (dmSelected !== null && isMyTurn) {
+    const tile = myHand[dmSelected]
+    const canLeft  = s.board.length === 0 || tile.includes(s.leftEnd)
+    const canRight = s.board.length === 0 || tile.includes(s.rightEnd)
+    const onlyOne  = s.board.length === 0 || s.leftEnd === s.rightEnd
+    if (onlyOne || (canLeft && !canRight)) {
+      // Joga automaticamente
+      setTimeout(() => dmPlay(dmSelected, 'right'), 100)
+      sideHTML = ''
+    } else {
+      sideHTML = `
+      <div class="dm-side-btns">
+        ${canLeft  ? `<button class="dm-side-btn" onclick="dmPlay(${dmSelected},'left')">⬅️ Esquerda<br/><small>${s.leftEnd}</small></button>` : ''}
+        ${canRight ? `<button class="dm-side-btn" onclick="dmPlay(${dmSelected},'right')">Direita ➡️<br/><small>${s.rightEnd}</small></button>` : ''}
+      </div>`
+    }
+  }
+
+  content.innerHTML = `
+  <div class="dm-wrap">
+    <div class="dm-header">
+      <div class="dm-player ${s.turn==='p2'?'dm-active':''}">
+        🤖 CPU <span class="dm-count">${oppCount}</span>
+      </div>
+      <div class="dm-center-info">
+        <span style="font-size:10px;color:var(--text-muted)">Boneyard</span>
+        <span style="font-size:16px;font-weight:800;color:var(--primary)">${s.boneyard.length}</span>
+      </div>
+      <div class="dm-player ${s.turn==='p1'?'dm-active':''}" style="flex-direction:row-reverse">
+        ${state.user.avatar} Você <span class="dm-count">${myHand.length}</span>
+      </div>
+    </div>
+
+    <div class="dm-board-scroll">
+      <div class="dm-board-inner">${boardHTML}</div>
+    </div>
+
+    <div class="dm-status" id="dm-status">
+      ${s.winner ? '' : isMyTurn
+        ? (hasPlay ? '🎯 Selecione uma pedra para jogar' : '🔄 Sem jogadas — comprando/passando...')
+        : '⏳ Vez da CPU...'}
+    </div>
+
+    ${sideHTML}
+
+    <div class="dm-hand-label">Sua mão (${myHand.length} pedras)</div>
+    <div class="dm-hand">${handHTML}</div>
+
+    ${!hasPlay && isMyTurn ? `
+      <button class="btn-secondary" onclick="dmPassCPU()">
+        ${s.boneyard.length > 0 ? '🎲 Comprar pedra' : '⏭️ Passar a vez'}
+      </button>` : ''}
+    <button class="btn-secondary" style="font-size:12px;opacity:0.6" onclick="dominoVsCPU()">🔄 Novo jogo</button>
+  </div>`
+
+  if (s.winner) dmEndGame(s.winner)
+  else if (s.turn === 'p2' && dmMode === 'cpu') setTimeout(dmCPUPlay, 800)
+}
+
+function dmSelectTile(i) {
+  const s = dmState
+  const myHand = dmMyRole === 'p1' ? s.hand1 : s.hand2
+  const tile   = myHand[i]
+
+  // Se tabuleiro vazio ou só um lado válido → joga direto
+  if (s.board.length === 0) {
+    dmState = dominoPlayTile(dmState, i, 'right', dmMyRole === 'p1')
+    dmSelected = null
+    dmRender()
+    return
+  }
+  const canLeft  = tile.includes(s.leftEnd)
+  const canRight = tile.includes(s.rightEnd)
+  if (canLeft && !canRight) {
+    dmState = dominoPlayTile(dmState, i, 'left', dmMyRole === 'p1')
+    dmSelected = null; dmRender(); return
+  }
+  if (canRight && !canLeft) {
+    dmState = dominoPlayTile(dmState, i, 'right', dmMyRole === 'p1')
+    dmSelected = null; dmRender(); return
+  }
+  // Ambos válidos — mostra botões de lado
+  dmSelected = i
+  dmRender()
+}
+
+function dmPlay(i, side) {
+  dmState    = dominoPlayTile(dmState, i, side, dmMyRole === 'p1')
+  dmSelected = null
+  dmRender()
+}
+
+function dmPassCPU() {
+  dmState = dominoPass(dmState, dmMyRole === 'p1')
+  dmRender()
+}
+
+function dmCPUPlay() {
+  const s    = dmState
+  const hand = s.hand2
+  const isP1 = false
+
+  // CPU: tenta jogar qualquer pedra válida
+  for (let i = 0; i < hand.length; i++) {
+    const tile = hand[i]
+    if (dominoCanPlay(tile, s.leftEnd, s.rightEnd)) {
+      const side = tile.includes(s.leftEnd) ? 'left' : 'right'
+      dmState = dominoPlayTile(dmState, i, side, isP1)
+      dmRender(); return
+    }
+  }
+  // Sem jogada → passa/compra
+  dmState = dominoPass(dmState, isP1)
+  dmRender()
+}
+
+function dmEndGame(winner) {
+  const s    = dmState
+  const iWon = winner === dmMyRole || winner === 'draw' && dominoHandScore(s.hand1) < dominoHandScore(s.hand2)
+  if (dmMode === 'cpu' && iWon && winner !== 'draw') addByts(30, true)
+  if (dmMode === 'online' && iWon && winner !== 'draw') addByts(60, true)
+
+  setTimeout(() => {
+    const content = document.getElementById('game-content')
+    if (!content) return
+    const scoreP1 = dominoHandScore(s.hand1)
+    const scoreP2 = dominoHandScore(s.hand2)
+    content.innerHTML = `
+    <div class="ttt-wrap" style="align-items:center;gap:16px;padding:16px 0">
+      <div style="font-size:56px">${winner==='draw'?'🤝':iWon?'🏆':'😤'}</div>
+      <h2 style="font-size:20px;font-weight:800;color:${winner==='draw'?'#f59e0b':iWon?'#22c55e':'#ef4444'}">
+        ${winner==='draw'?'Empate!':iWon?'Você venceu!':'Você perdeu!'}
+      </h2>
+      <div style="background:var(--bg-card);border-radius:var(--radius-lg);padding:16px;width:100%;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span>${state.user.avatar} Você</span>
+          <span style="font-weight:700;color:${scoreP1<scoreP2?'#22c55e':'#ef4444'}">${scoreP1} pts</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span>🤖 CPU</span>
+          <span style="font-weight:700;color:${scoreP2<scoreP1?'#22c55e':'#ef4444'}">${scoreP2} pts</span>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);text-align:center">(menor pontuação = melhor)</p>
+      </div>
+      ${iWon && winner!=='draw'?`<p style="color:var(--accent-byts);font-weight:700">+${dmMode==='online'?60:30} Byts! 🪙</p>`:''}
+      <div style="display:flex;gap:8px;width:100%">
+        <button class="btn-primary" onclick="${dmMode==='cpu'?'dominoVsCPU()':'dominoOnline()'}" style="flex:1">Revanche 🁣</button>
+        <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+      </div>
+    </div>`
+  }, 300)
+}
+
+// ══════════════════════════════════════════════
+// DOMINÓ — ONLINE
+// ══════════════════════════════════════════════
+async function dominoOnline() {
+  showToast('Criando sala... ⏳')
+  const code = genCode()
+  const init = dominoDeal()
+
+  const { data, error } = await sb.from('rooms').insert({
+    code,
+    game: 'domino',
+    host_name: state.user.nome,
+    status: 'waiting',
+    board: init,
+    current_turn: state.user.nome,
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+
+  state.currentRoom = data
+  dmMode   = 'online'
+  dmMyRole = 'p1'
+  dmState  = init
+  dmSelected = null
+
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+  document.querySelector('.waiting-title').textContent = 'Sala de Dominó criada! 🁣'
+  document.querySelector('.waiting-sub').textContent   = 'Aguardando oponente entrar...'
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      const room = payload.new
+      if (room.status === 'playing') {
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent = '🁣 Dominó'
+        dmState = room.board
+        dmRenderOnline()
+      } else if (room.status === 'playing') {
+        dmState = room.board
+        dmRenderOnline()
+      }
+      if (room.status === 'finished') dmEndGame(room.winner)
+    })
+    .subscribe()
+}
+
+async function dominoJoinRoom(code) {
+  const { data: room, error } = await sb
+    .from('rooms').select('*').eq('code', code).eq('status', 'waiting').maybeSingle()
+  if (error || !room || room.game !== 'domino') return false
+  if (room.host_name === state.user.nome) { showToast('Você criou esta sala!'); return true }
+
+  dmMode   = 'online'
+  dmMyRole = 'p2'
+  dmState  = room.board
+  dmSelected = null
+
+  const { data: updated } = await sb.from('rooms')
+    .update({ guest_name: state.user.nome, status: 'playing' })
+    .eq('code', code).select().maybeSingle()
+
+  state.currentRoom = updated || room
+  document.getElementById('game-title-bar').textContent = '🁣 Dominó'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  dmRenderOnline()
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-' + code)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'rooms', filter: `code=eq.${code}`
+    }, (payload) => {
+      state.currentRoom = payload.new
+      dmState = payload.new.board
+      if (payload.new.status === 'playing')  dmRenderOnline()
+      if (payload.new.status === 'finished') dmEndGame(payload.new.winner)
+    })
+    .subscribe()
+  return true
+}
+
+function dmRenderOnline() {
+  // Reutiliza dmRender mas com sync ao Supabase
+  dmRender()
+}
+
+async function dmSyncOnline(newState) {
+  const room = state.currentRoom
+  await sb.from('rooms').update({
+    board: newState,
+    current_turn: newState.turn === 'p1' ? room.host_name : room.guest_name,
+    ...(newState.winner ? {
+      status: 'finished',
+      winner: newState.winner === dmMyRole ? state.user.nome : (dmMyRole==='p1'?room.guest_name:room.host_name)
+    } : {}),
+  }).eq('code', room.code)
+}
+
+// Override dmSelectTile e dmPlay para online
+const _dmSelectOrig = dmSelectTile
+function dmSelectTileOnline(i) {
+  const s = dmState
+  const myHand = dmMyRole === 'p1' ? s.hand1 : s.hand2
+  const tile   = myHand[i]
+
+  if (s.board.length === 0) {
+    dmState = dominoPlayTile(dmState, i, 'right', dmMyRole === 'p1')
+    dmSelected = null
+    if (dmMode === 'online') dmSyncOnline(dmState)
+    dmRender(); return
+  }
+  const canLeft  = tile.includes(s.leftEnd)
+  const canRight = tile.includes(s.rightEnd)
+  if (canLeft && !canRight) {
+    dmState = dominoPlayTile(dmState, i, 'left', dmMyRole === 'p1')
+    dmSelected = null
+    if (dmMode === 'online') dmSyncOnline(dmState)
+    dmRender(); return
+  }
+  if (canRight && !canLeft) {
+    dmState = dominoPlayTile(dmState, i, 'right', dmMyRole === 'p1')
+    dmSelected = null
+    if (dmMode === 'online') dmSyncOnline(dmState)
+    dmRender(); return
+  }
+  dmSelected = i
+  dmRender()
+}
+
+// Sobrescreve globalmente para suportar ambos os modos
+window.dmSelectTile = function(i) {
+  if (dmMode === 'online') dmSelectTileOnline(i)
+  else _dmSelectOrig(i)
+}
+
+const _dmPlayOrig = dmPlay
+window.dmPlay = function(i, side) {
+  dmState    = dominoPlayTile(dmState, i, side, dmMyRole === 'p1')
+  dmSelected = null
+  if (dmMode === 'online') dmSyncOnline(dmState)
+  dmRender()
+}
+
+window.dmPassCPU = function() {
+  dmState = dominoPass(dmState, dmMyRole === 'p1')
+  if (dmMode === 'online') dmSyncOnline(dmState)
+  dmRender()
+}
+
+
+// ══════════════════════════════════════════════
+// XADREZ — ENGINE
+// ══════════════════════════════════════════════
+// Peças: P=peão B=bispo N=cavalo R=torre Q=rainha K=rei
+// Brancas maiúsculas, pretas minúsculas
+
+const CH_INIT = [
+  ['r','n','b','q','k','b','n','r'],
+  ['p','p','p','p','p','p','p','p'],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  [' ',' ',' ',' ',' ',' ',' ',' '],
+  ['P','P','P','P','P','P','P','P'],
+  ['R','N','B','Q','K','B','N','R'],
+]
+
+const CH_EMOJI = {
+  K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙',
+  k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟',
+  ' ':''
+}
+
+function chCloneBoard(b) { return b.map(r => [...r]) }
+
+function chIsWhite(p) { return p !== ' ' && p === p.toUpperCase() }
+function chIsBlack(p) { return p !== ' ' && p === p.toLowerCase() }
+function chIsEnemy(p, white) { return white ? chIsBlack(p) : chIsWhite(p) }
+function chIsFriend(p, white) { return white ? chIsWhite(p) : chIsBlack(p) }
+
+function chGetMoves(board, r, c, enPassant, castling) {
+  const p = board[r][c]
+  if (!p || p === ' ') return []
+  const white = chIsWhite(p)
+  const type  = p.toLowerCase()
+  const moves = []
+
+  const add = (nr, nc, special) => {
+    if (nr < 0 || nr > 7 || nc < 0 || nc > 7) return false
+    if (chIsFriend(board[nr][nc], white)) return false
+    moves.push({ from:[r,c], to:[nr,nc], special })
+    return board[nr][nc] === ' '
+  }
+
+  if (type === 'p') {
+    const dir = white ? -1 : 1
+    const start = white ? 6 : 1
+    // Avançar
+    if (board[r+dir]?.[c] === ' ') {
+      add(r+dir, c, null)
+      if (r === start && board[r+2*dir]?.[c] === ' ') add(r+2*dir, c, 'double')
+    }
+    // Capturar diagonal
+    for (const dc of [-1,1]) {
+      const nr = r+dir, nc = c+dc
+      if (nr<0||nr>7||nc<0||nc>7) continue
+      if (chIsEnemy(board[nr][nc], white)) add(nr, nc, 'capture')
+      // En passant
+      if (enPassant && enPassant[0]===nr && enPassant[1]===nc) {
+        moves.push({ from:[r,c], to:[nr,nc], special:'enpassant' })
+      }
+    }
+  }
+
+  if (type === 'n') {
+    for (const [dr,dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]])
+      add(r+dr, c+dc, null)
+  }
+
+  if (type === 'b' || type === 'q') {
+    for (const [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+      for (let i=1; i<8; i++) { if (!add(r+dr*i, c+dc*i, null)) break }
+    }
+  }
+
+  if (type === 'r' || type === 'q') {
+    for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      for (let i=1; i<8; i++) { if (!add(r+dr*i, c+dc*i, null)) break }
+    }
+  }
+
+  if (type === 'k') {
+    for (const [dr,dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]])
+      add(r+dr, c+dc, null)
+    // Roque
+    if (castling) {
+      const rank = white ? 7 : 0
+      if (r === rank) {
+        // Roque curto
+        if (castling[white?'wk':'bk'] &&
+            board[rank][5]===' ' && board[rank][6]===' ' &&
+            !chIsUnderAttack(board,rank,4,!white) &&
+            !chIsUnderAttack(board,rank,5,!white) &&
+            !chIsUnderAttack(board,rank,6,!white)) {
+          moves.push({ from:[r,c], to:[rank,6], special:'castle-k' })
+        }
+        // Roque longo
+        if (castling[white?'wq':'bq'] &&
+            board[rank][3]===' ' && board[rank][2]===' ' && board[rank][1]===' ' &&
+            !chIsUnderAttack(board,rank,4,!white) &&
+            !chIsUnderAttack(board,rank,3,!white) &&
+            !chIsUnderAttack(board,rank,2,!white)) {
+          moves.push({ from:[r,c], to:[rank,2], special:'castle-q' })
+        }
+      }
+    }
+  }
+
+  return moves
+}
+
+function chIsUnderAttack(board, r, c, byWhite) {
+  for (let fr=0; fr<8; fr++)
+    for (let fc=0; fc<8; fc++) {
+      const p = board[fr][fc]
+      if (p===' ') continue
+      if (byWhite !== chIsWhite(p)) continue
+      const moves = chGetMoves(board, fr, fc, null, null)
+      if (moves.some(m => m.to[0]===r && m.to[1]===c)) return true
+    }
+  return false
+}
+
+function chInCheck(board, white) {
+  // Encontra rei
+  const king = white ? 'K' : 'k'
+  for (let r=0; r<8; r++)
+    for (let c=0; c<8; c++)
+      if (board[r][c] === king) return chIsUnderAttack(board, r, c, !white)
+  return false
+}
+
+function chApplyMove(board, move, enPassant, castling) {
+  const b = chCloneBoard(board)
+  const [fr,fc] = move.from
+  const [tr,tc] = move.to
+  const p = b[fr][fc]
+  const white = chIsWhite(p)
+  let newEP = null
+  const newCastling = { ...castling }
+
+  b[tr][tc] = p
+  b[fr][fc] = ' '
+
+  if (move.special === 'double') newEP = [white?tr+1:tr-1, tc]
+  if (move.special === 'enpassant') b[white?tr+1:tr-1][tc] = ' '
+  if (move.special === 'castle-k') {
+    const rank = white ? 7 : 0
+    b[rank][5] = b[rank][7]; b[rank][7] = ' '
+  }
+  if (move.special === 'castle-q') {
+    const rank = white ? 7 : 0
+    b[rank][3] = b[rank][0]; b[rank][0] = ' '
+  }
+  // Promoção automática para Rainha
+  if (p==='P' && tr===0) b[tr][tc] = 'Q'
+  if (p==='p' && tr===7) b[tr][tc] = 'q'
+
+  // Atualiza direitos de roque
+  if (p==='K') { newCastling.wk=false; newCastling.wq=false }
+  if (p==='k') { newCastling.bk=false; newCastling.bq=false }
+  if (p==='R') {
+    if (fc===7) newCastling.wk=false
+    if (fc===0) newCastling.wq=false
+  }
+  if (p==='r') {
+    if (fc===7) newCastling.bk=false
+    if (fc===0) newCastling.bq=false
+  }
+
+  return { board:b, enPassant:newEP, castling:newCastling }
+}
+
+function chLegalMoves(board, white, enPassant, castling) {
+  const moves = []
+  for (let r=0; r<8; r++)
+    for (let c=0; c<8; c++) {
+      const p = board[r][c]
+      if (p===' ') continue
+      if (chIsWhite(p) !== white) continue
+      const pMoves = chGetMoves(board, r, c, enPassant, castling)
+      for (const m of pMoves) {
+        const { board:nb } = chApplyMove(board, m, enPassant, castling)
+        if (!chInCheck(nb, white)) moves.push(m)
+      }
+    }
+  return moves
+}
+
+// ── UI STATE ───────────────────────────────
+let chBoard, chTurn, chSelected, chMoves, chLegal
+let chEnPassant, chCastling, chMode, chMyColor, chStatus
+
+function chInitState() {
+  chBoard     = CH_INIT.map(r=>[...r])
+  chTurn      = 'white'
+  chSelected  = null
+  chEnPassant = null
+  chCastling  = { wk:true, wq:true, bk:true, bq:true }
+  chLegal     = chLegalMoves(chBoard, true, null, chCastling)
+  chMoves     = []
+  chStatus    = ''
+}
+
+// ══════════════════════════════════════════════
+// XADREZ — MENU
+// ══════════════════════════════════════════════
+function buildChessMenu() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon">♟️</div>
+    <h2 class="ttt-menu-title">Xadrez</h2>
+    <p class="ttt-menu-sub">O jogo de estratégia mais famoso</p>
+    <button class="mode-btn mode-online" onclick="chessOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Jogar Online</span>
+        <span class="mode-desc">Desafie um primo em tempo real</span>
+      </div>
+      <span class="mode-reward">+100 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="chessVsCPU()">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info">
+        <span class="mode-title">vs CPU</span>
+        <span class="mode-desc">Pratique contra a máquina</span>
+      </div>
+      <span class="mode-reward">+50 🪙</span>
+    </button>
+  </div>`
+}
+
+// ══════════════════════════════════════════════
+// XADREZ — VS CPU
+// ══════════════════════════════════════════════
+function chessVsCPU() {
+  chMode    = 'cpu'
+  chMyColor = 'white'
+  chInitState()
+  chRender()
+}
+
+function chRender() {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const isMyTurn   = chTurn === chMyColor
+  const amIWhite   = chMyColor === 'white'
+  const inCheck    = chInCheck(chBoard, chTurn==='white')
+  const noMoves    = chLegal.length === 0
+
+  let statusMsg = ''
+  if (noMoves && inCheck) {
+    statusMsg = (chTurn==='white') === amIWhite ? '☠️ Xeque-mate! Você perdeu.' : '🏆 Xeque-mate! Você venceu!'
+  } else if (noMoves) {
+    statusMsg = '🤝 Afogamento — Empate!'
+  } else if (inCheck) {
+    statusMsg = isMyTurn ? '⚠️ Xeque! Defenda seu rei.' : '⚠️ Oponente em xeque!'
+  } else {
+    statusMsg = isMyTurn ? '🎯 Sua vez — escolha uma peça' : (chMode==='cpu'?'🤖 CPU pensando...':'⏳ Vez do oponente...')
+  }
+
+  // Contar material capturado (diferença)
+  let whiteVal=0, blackVal=0
+  const vals = {p:1,n:3,b:3,r:5,q:9,k:0}
+  chBoard.flat().forEach(p=>{if(p!==' '){if(chIsWhite(p))whiteVal+=vals[p.toLowerCase()];else blackVal+=vals[p]}})
+
+  const selTargets = new Set(
+    (chSelected ? chLegal.filter(m=>m.from[0]===chSelected[0]&&m.from[1]===chSelected[1]) : [])
+      .map(m=>m.to[0]+','+m.to[1])
+  )
+
+  let rowsHTML = ''
+  for (let r = 0; r < 8; r++) {
+    const dr = amIWhite ? r : 7-r
+    rowsHTML += '<div class="ch-row">'
+    rowsHTML += `<span class="ch-coord ch-rank">${8-dr}</span>`
+    for (let c = 0; c < 8; c++) {
+      const dc     = amIWhite ? c : 7-c
+      const piece  = chBoard[dr][dc]
+      const isDark = (dr+dc)%2===1
+      const key    = dr+','+dc
+      const isSel  = chSelected && chSelected[0]===dr && chSelected[1]===dc
+      const isTgt  = selTargets.has(key)
+      const isMovable = isMyTurn && piece!==' ' &&
+        (amIWhite ? chIsWhite(piece) : chIsBlack(piece)) &&
+        chLegal.some(m=>m.from[0]===dr&&m.from[1]===dc)
+
+      let cls = 'ch-cell '+(isDark?'ch-dark':'ch-light')
+      if (isSel)     cls += ' ch-selected'
+      if (isTgt)     cls += ' ch-target'
+      if (isMovable && !chSelected) cls += ' ch-movable'
+      if (inCheck && ((piece==='K'&&chTurn==='white')||(piece==='k'&&chTurn==='black'))) cls += ' ch-check'
+
+      const emoji = CH_EMOJI[piece] || ''
+      const pieceHTML = emoji ? `<span class="ch-piece ${chIsWhite(piece)?'ch-white-piece':'ch-black-piece'}">${emoji}</span>` : ''
+      const dotHTML   = isTgt && !emoji ? '<div class="ch-dot"></div>' : ''
+      const capHTML   = isTgt && emoji  ? '<div class="ch-cap-ring"></div>' : ''
+
+      rowsHTML += `<div class="${cls}" onclick="chClick(${dr},${dc})">${capHTML}${pieceHTML}${dotHTML}</div>`
+    }
+    rowsHTML += '</div>'
+  }
+  // Coordenadas colunas
+  const fileLabels = (amIWhite?['a','b','c','d','e','f','g','h']:['h','g','f','e','d','c','b','a'])
+    .map(f=>`<span class="ch-coord ch-file">${f}</span>`).join('')
+
+  content.innerHTML = `
+  <div class="ch-wrap">
+    <div class="ch-header">
+      <div class="ch-player-bar ${chTurn!==chMyColor?'ch-active':''}">
+        <span class="ch-piece-mini ch-black-piece">♟</span>
+        <span>${chMode==='cpu'?'🤖 CPU':'Oponente'}</span>
+        <span class="ch-material" style="color:${blackVal>whiteVal?'#22c55e':'var(--text-muted)'}">
+          ${blackVal>whiteVal?'+'+( blackVal-whiteVal):''}
+        </span>
+      </div>
+      <div class="ch-player-bar ${chTurn===chMyColor?'ch-active':''}" style="flex-direction:row-reverse">
+        <span class="ch-piece-mini ch-white-piece">♙</span>
+        <span>${state.user.avatar} Você</span>
+        <span class="ch-material" style="color:${whiteVal>blackVal?'#22c55e':'var(--text-muted)'}">
+          ${whiteVal>blackVal?'+'+(whiteVal-blackVal):''}
+        </span>
+      </div>
+    </div>
+    <p class="ch-status">${statusMsg}</p>
+    <div class="ch-board">
+      ${rowsHTML}
+      <div class="ch-files"><span class="ch-coord"></span>${fileLabels}</div>
+    </div>
+    <button class="btn-secondary" style="margin-top:8px;font-size:13px" onclick="${chMode==='cpu'?'chessVsCPU()':'closeGame()'}">
+      ${chMode==='cpu'?'🔄 Reiniciar':'← Sair'}
+    </button>
+  </div>`
+
+  if (noMoves) {
+    setTimeout(() => chEndGame(noMoves && inCheck ? (chTurn==='white'?'black':'white') : 'draw'), 500)
+    return
+  }
+  if (chMode==='cpu' && chTurn!==chMyColor) setTimeout(chCPUMove, 700)
+}
+
+function chClick(r, c) {
+  if (chTurn !== chMyColor) return
+  const piece = chBoard[r][c]
+
+  // Seleciona peça própria
+  if (piece !== ' ' && (chMyColor==='white'?chIsWhite(piece):chIsBlack(piece))) {
+    const pMoves = chLegal.filter(m=>m.from[0]===r&&m.from[1]===c)
+    if (pMoves.length) {
+      chSelected = [r,c]
+      chRender()
+      return
+    }
+  }
+
+  // Move para destino
+  if (chSelected) {
+    const move = chLegal.find(m=>
+      m.from[0]===chSelected[0]&&m.from[1]===chSelected[1]&&
+      m.to[0]===r&&m.to[1]===c
+    )
+    if (move) {
+      const res = chApplyMove(chBoard, move, chEnPassant, chCastling)
+      chBoard     = res.board
+      chEnPassant = res.enPassant
+      chCastling  = res.castling
+      chSelected  = null
+      chTurn      = chTurn==='white'?'black':'white'
+      chLegal     = chLegalMoves(chBoard, chTurn==='white', chEnPassant, chCastling)
+      if (chMode==='online') chSyncOnline()
+      chRender()
+      return
+    }
+    chSelected = null
+  }
+  chRender()
+}
+
+// CPU: move aleatório entre legais (com preferência por capturas)
+function chCPUMove() {
+  const isWhite = chTurn === 'white'
+  const moves   = chLegalMoves(chBoard, isWhite, chEnPassant, chCastling)
+  if (!moves.length) { chRender(); return }
+
+  const caps = moves.filter(m => chBoard[m.to[0]][m.to[1]] !== ' ')
+  const move = caps.length
+    ? caps[Math.floor(Math.random()*caps.length)]
+    : moves[Math.floor(Math.random()*moves.length)]
+
+  const res   = chApplyMove(chBoard, move, chEnPassant, chCastling)
+  chBoard     = res.board
+  chEnPassant = res.enPassant
+  chCastling  = res.castling
+  chTurn      = chTurn==='white'?'black':'white'
+  chLegal     = chLegalMoves(chBoard, chTurn==='white', chEnPassant, chCastling)
+  chRender()
+}
+
+function chEndGame(winner) {
+  const iWon = winner === chMyColor
+  const isDraw = winner === 'draw'
+  if (iWon) addByts(chMode==='online'?100:50, true)
+  const content = document.getElementById('game-content')
+  if (!content) return
+  content.innerHTML = `
+  <div class="ttt-wrap" style="align-items:center;gap:20px;padding:24px 0">
+    <div style="font-size:64px">${iWon?'🏆':isDraw?'🤝':'😤'}</div>
+    <h2 style="font-size:22px;font-weight:800;color:${iWon?'#22c55e':isDraw?'#f59e0b':'#ef4444'}">
+      ${iWon?'Você venceu!':isDraw?'Empate!':'Você perdeu!'}
+    </h2>
+    ${iWon?`<p style="color:var(--accent-byts);font-weight:700">+${chMode==='online'?100:50} Byts! 🪙</p>`:''}
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn-primary" onclick="${chMode==='cpu'?'chessVsCPU()':'chessOnline()'}" style="flex:1">Revanche ♟️</button>
+      <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+    </div>
+  </div>`
+  if (chMode==='online'&&state.realtimeChannel) {
+    sb.removeChannel(state.realtimeChannel); state.realtimeChannel=null
+  }
+}
+
+// ══════════════════════════════════════════════
+// XADREZ — ONLINE
+// ══════════════════════════════════════════════
+async function chessOnline() {
+  showToast('Criando sala... ⏳')
+  const code = genCode()
+  chInitState()
+  chMode    = 'online'
+  chMyColor = 'white'
+
+  const { data, error } = await sb.from('rooms').insert({
+    code, game:'chess', host_name:state.user.nome,
+    status:'waiting',
+    board:{ board:chBoard, turn:'white', enPassant:null, castling:chCastling },
+    current_turn: state.user.nome,
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+  state.currentRoom = data
+
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+  document.querySelector('.waiting-title').textContent = 'Aguardando oponente... ♟️'
+  document.querySelector('.waiting-sub').textContent   = 'Você joga com as peças brancas'
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:`code=eq.${code}`}, (payload) => {
+      state.currentRoom = payload.new
+      const room = payload.new
+      if (room.status==='playing') {
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent='♟️ Xadrez'
+        chLoadOnline(room)
+      }
+      if (room.status==='playing') chLoadOnline(room)
+      if (room.status==='finished') chEndGame(room.winner===state.user.nome?chMyColor:(chMyColor==='white'?'black':'white'))
+    }).subscribe()
+}
+
+async function chessJoinRoom(code) {
+  const { data:room, error } = await sb
+    .from('rooms').select('*').eq('code',code).eq('status','waiting').maybeSingle()
+  if (error||!room||room.game!=='chess') return false
+  if (room.host_name===state.user.nome) { showToast('Você criou esta sala!'); return true }
+
+  chMode    = 'online'
+  chMyColor = 'black'
+  chInitState()
+
+  const { data:updated } = await sb.from('rooms')
+    .update({ guest_name:state.user.nome, status:'playing' })
+    .eq('code',code).select().maybeSingle()
+  state.currentRoom = updated || room
+
+  document.getElementById('game-title-bar').textContent='♟️ Xadrez'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  chLoadOnline(state.currentRoom)
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:`code=eq.${code}`}, (payload) => {
+      state.currentRoom = payload.new
+      if (payload.new.status==='playing') chLoadOnline(payload.new)
+      if (payload.new.status==='finished') chEndGame(payload.new.winner===state.user.nome?chMyColor:(chMyColor==='white'?'black':'white'))
+    }).subscribe()
+  return true
+}
+
+function chLoadOnline(room) {
+  const bd    = room.board || {}
+  chBoard     = bd.board || CH_INIT.map(r=>[...r])
+  chTurn      = bd.turn  || 'white'
+  chEnPassant = bd.enPassant || null
+  chCastling  = bd.castling  || { wk:true,wq:true,bk:true,bq:true }
+  chSelected  = null
+  chLegal     = chLegalMoves(chBoard, chTurn==='white', chEnPassant, chCastling)
+  chRender()
+}
+
+async function chSyncOnline() {
+  const room   = state.currentRoom
+  const noMv   = chLegalMoves(chBoard, chTurn==='white', chEnPassant, chCastling).length===0
+  const inChk  = chInCheck(chBoard, chTurn==='white')
+  const isOver = noMv
+  const winner = isOver ? (inChk?(chTurn==='white'?room.guest_name:room.host_name):null) : null
+
+  await sb.from('rooms').update({
+    board: { board:chBoard, turn:chTurn, enPassant:chEnPassant, castling:chCastling },
+    current_turn: chTurn==='white'?room.host_name:room.guest_name,
+    ...(isOver?{status:'finished',winner}:{}),
+  }).eq('code', room.code)
+}
+
+// ══════════════════════════════════════════════
+// LOJA
+// ══════════════════════════════════════════════
+function resgatar(btn,custo){
+  if(state.user.byts<custo){showToast('Byts insuficientes 😢');return}
+  state.user.byts-=custo;state.users[state.user.email]=state.user;saveUsers();updateHeader()
+  btn.textContent='✅ Resgatado!';btn.disabled=true;btn.classList.add('redeemed')
+  showToast('Brinde resgatado! 🎁')
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  return Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('')
+}
+
+let toastTimer
+function showToast(msg){
+  const t=document.getElementById('toast')
+  t.textContent=msg;t.classList.remove('hidden');t.classList.add('visible')
+  clearTimeout(toastTimer)
+  toastTimer=setTimeout(()=>{t.classList.remove('visible');setTimeout(()=>t.classList.add('hidden'),300)},2500)
+}
+</script>
+
+  <!-- PWA: Service Worker + Install Banner -->
+  <script>
+    // Registra SW
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('SW registrado'))
+          .catch(e => console.warn('SW falhou:', e))
+      })
+    }
+
+    // Banner de instalação (Android/Chrome)
+    let deferredPrompt = null
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault()
+      deferredPrompt = e
+      // Mostra banner após 3s se usuário estiver logado
+      setTimeout(() => {
+        if (deferredPrompt && document.getElementById('app-shell').classList.contains('active')) {
+          showInstallBanner()
+        }
+      }, 3000)
+    })
+
+    function showInstallBanner() {
+      const banner = document.createElement('div')
+      banner.id = 'install-banner'
+      banner.className = 'install-banner'
+      banner.innerHTML = [
+        '<div class="install-banner-inner">',
+          '<span class="install-icon">&#127918;</span>',
+          '<div class="install-text">',
+            '<p class="install-title">Instalar PrimoBytes</p>',
+            '<p class="install-sub">Adicione à tela inicial!</p>',
+          '</div>',
+          '<button class="install-btn" onclick="installPWA()">Instalar</button>',
+          '<button class="install-close" onclick="dismissBanner()">✕</button>',
+        '</div>',
+      ].join('')
+      document.body.appendChild(banner)
+      setTimeout(() => banner.classList.add('visible'), 100)
+    }
+
+    async function installPWA() {
+      if (!deferredPrompt) return
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      deferredPrompt = null
+      dismissBanner()
+      if (outcome === 'accepted') showToast('PrimoBytes instalado! 🎉')
+    }
+
+    function dismissBanner() {
+      const b = document.getElementById('install-banner')
+      if (b) { b.classList.remove('visible'); setTimeout(() => b.remove(), 300) }
+    }
+
+    // iOS: instrução manual (não suporta beforeinstallprompt)
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    if (isIOS && !isStandalone) {
+      setTimeout(() => {
+        if (document.getElementById('app-shell').classList.contains('active')) {
+          showToast('iOS: toque em Compartilhar → Adicionar à Tela Inicial 📲')
+        }
+      }, 4000)
+    }
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('SW registrado'))
+          .catch(e => console.log('SW erro:', e))
+      })
+    }
+  </script>
+</body>
+</html>
