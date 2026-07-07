@@ -160,10 +160,10 @@
           <span class="game-name">Dama</span>
           <span class="game-tag tag-play">🌐 Online</span>
         </button>
-        <button class="game-card coming-soon" disabled>
+        <button class="game-card active-game" onclick="openGame('uno')">
           <span class="game-emoji">🃏</span>
           <span class="game-name">Uno</span>
-          <span class="game-tag tag-soon">Em Breve</span>
+          <span class="game-tag tag-play">🌐 Online</span>
         </button>
         <button class="game-card active-game" onclick="openGame('chess')">
           <span class="game-emoji">♟️</span>
@@ -218,6 +218,25 @@
     <div class="nav-spacer"></div>
   </main>
 
+  <!-- TAB: RANKING -->
+  <main class="app-main hidden" id="main-ranking">
+    <section class="section">
+      <div class="rank-header">
+        <h2 class="rank-title">🏆 Hall da Fama</h2>
+        <p class="rank-sub">Ranking global dos primos</p>
+        <div class="rank-tabs">
+          <button class="rank-tab active" id="rtab-byts" onclick="switchRankTab('byts')">🪙 Byts</button>
+          <button class="rank-tab" id="rtab-wins" onclick="switchRankTab('wins')">⚔️ Vitórias</button>
+          <button class="rank-tab" id="rtab-level" onclick="switchRankTab('level')">⭐ Nível</button>
+        </div>
+      </div>
+      <div id="rank-list" class="rank-list">
+        <div class="empty-state">Carregando ranking... ⏳</div>
+      </div>
+    </section>
+    <div class="nav-spacer"></div>
+  </main>
+
   <!-- TAB: PERFIL -->
   <main class="app-main hidden" id="main-perfil">
     <section class="section">
@@ -257,6 +276,9 @@
     </button>
     <button class="nav-item" id="nav-perfil" onclick="showTab('perfil')">
       <span class="nav-icon">👤</span><span class="nav-label">Perfil</span>
+    </button>
+    <button class="nav-item" id="nav-ranking" onclick="showTab('ranking')">
+      <span class="nav-icon">🏆</span><span class="nav-label">Ranking</span>
     </button>
   </nav>
 </div>
@@ -461,7 +483,7 @@ function addByts(amount, isWin=true) {
 // NAVEGAÇÃO
 // ══════════════════════════════════════════════
 function showTab(tab) {
-  ['jogos','lobby','loja','perfil'].forEach(t => {
+  ['jogos','lobby','loja','perfil','ranking'].forEach(t => {
     const el = document.getElementById('main-'+t)
     if (el) el.classList.toggle('hidden', t!==tab)
   })
@@ -469,6 +491,7 @@ function showTab(tab) {
   const navEl = document.getElementById('nav-'+tab)
   if (navEl) navEl.classList.add('active')
   if (tab==='lobby') loadOpenRooms()
+  if (tab==='ranking') loadRanking()
 }
 
 // ══════════════════════════════════════════════
@@ -538,6 +561,7 @@ function openGame(slug) {
   else if (slug==='checkers')  content.innerHTML = buildCheckersMenu()
   else if (slug==='domino')    content.innerHTML = buildDominoMenu()
   else if (slug==='chess')     content.innerHTML = buildChessMenu()
+  else if (slug==='uno')       content.innerHTML = buildUnoMenu()
 }
 
 function closeGame() {
@@ -664,6 +688,10 @@ async function joinRoom(code) {
     await chessJoinRoom(code)
     return
   }
+  if (room.game === 'uno') {
+    await unoJoinRoom(code)
+    return
+  }
 
   // Default: Jogo da Velha
   const { data: updated } = await sb
@@ -779,9 +807,13 @@ function renderTTTOnline(room) {
 }
 
 async function tttClickOnline(idx) {
+  if (tttOnlineProcessing) return
   const room = state.currentRoom
   if (!room || room.status!=='playing') return
   if (room.current_turn !== state.user.nome) return
+  tttOnlineProcessing = true
+  // Desabilita todas as células imediatamente
+  document.querySelectorAll('.ttt-cell').forEach(c => c.disabled = true)
 
   const board = [...(room.board || Array(9).fill(''))]
   if (board[idx] !== '') return
@@ -817,6 +849,9 @@ function tttCheckWinner(board) {
 }
 
 function handleTTTResult(room) {
+  tttOnlineProcessing = false
+  // Desabilita todas as células ao fim do jogo
+  document.querySelectorAll('.ttt-cell').forEach(c => c.disabled = true)
   const statusEl = document.getElementById('ttt-status')
   if (!statusEl) return
 
@@ -853,9 +888,10 @@ function handleTTTResult(room) {
 // ══════════════════════════════════════════════
 // TTT VS CPU
 // ══════════════════════════════════════════════
-let tttBoardCPU, tttGOCPU, tttSpCPU=0, tttScCPU=0, tttRndCPU=0
+let tttBoardCPU, tttGOCPU, tttSpCPU=0, tttScCPU=0, tttRndCPU=0, tttCpuThinking=false
 
 function tttVsCPU() {
+  tttCpuThinking=false
   document.getElementById('game-content').innerHTML = `
   <div class="ttt-wrap">
     <div class="ttt-scores">
@@ -873,15 +909,17 @@ function tttVsCPU() {
 }
 
 function tttClickCPU(i) {
-  if (tttGOCPU||tttBoardCPU[i]) return
+  if (tttGOCPU||tttBoardCPU[i]||tttCpuThinking) return
   tttBoardCPU[i]='X'; tttRenderCPU()
   const w=tttCheckWinner(tttBoardCPU)
   if (w){tttEndCPU(w);return}
   if(tttBoardCPU.every(c=>c)){tttEndCPU('draw');return}
+  tttCpuThinking=true
   document.getElementById('ttt-status').textContent='🤖 CPU pensando...'
   setTimeout(()=>{
     const best=tttBestMove()
     tttBoardCPU[best]='O'; tttRenderCPU()
+    tttCpuThinking=false
     const w2=tttCheckWinner(tttBoardCPU)
     if(w2){tttEndCPU(w2);return}
     if(tttBoardCPU.every(c=>c)){tttEndCPU('draw');return}
@@ -907,6 +945,7 @@ function tttRenderCPU() {
 }
 
 function tttEndCPU(r) {
+  tttCpuThinking=false
   tttGOCPU=true; tttRndCPU++
   const s=document.getElementById('ttt-status')
   if(r==='X'){tttSpCPU++;addByts(30);s.textContent='🏆 Você venceu! +30 Byts!';s.style.color='#22c55e'}
@@ -1093,7 +1132,8 @@ async function rpsJoinRoom(code) {
 
 function buildRPSOnlineBoard(room) {
   rpsMyChoice = null
-  rpsWaiting = false
+  rpsWaiting  = false
+  // Garante que botões estão habilitados ao montar
   const bd = room.board || {}
   return `
   <div class="rps-wrap">
@@ -2061,6 +2101,8 @@ function penRenderOnline(room) {
 }
 
 async function penChooseOnline(dir) {
+  // Desabilita botões imediatamente (previne duplo toque)
+  document.querySelectorAll('.pen-dir-btn').forEach(b => { b.disabled=true; b.style.opacity='0.4' })
   const room = state.currentRoom
   const bd   = { ...room.board }
   const isShooter = state.mySymbol === 'shooter'
@@ -2271,7 +2313,7 @@ function checkersWinner(board) {
 }
 
 // ── UI STATE ───────────────────────────────
-let ckBoard, ckSelected, ckTurn, ckMoves, ckMode, ckMyColor
+let ckBoard, ckSelected, ckTurn, ckMoves, ckMode, ckMyColor, ckProcessing=false
 let ckScoreRed = 0, ckScoreBlack = 0, ckRound = 0
 
 // ══════════════════════════════════════════════
@@ -2395,6 +2437,7 @@ function ckRenderBoard(highlightMoves = []) {
 }
 
 function ckClick(r, c) {
+  if (ckProcessing) return
   if (ckTurn !== ckMyColor) return
   const piece = ckBoard[r][c]
 
@@ -2592,6 +2635,7 @@ function ckLoadOnline(room) {
 }
 
 async function ckSyncOnline() {
+  ckProcessing = false
   const room = state.currentRoom
   const winner = checkersWinner(ckBoard)
 
@@ -2699,7 +2743,7 @@ function dominoHandScore(hand) {
 }
 
 // ── ESTADO UI ──────────────────────────────
-let dmState, dmMode, dmMyRole, dmSelected
+let dmState, dmMode, dmMyRole, dmSelected, dmProcessing=false
 
 // ══════════════════════════════════════════════
 // DOMINÓ — MENU
@@ -3072,15 +3116,20 @@ function dmSelectTileOnline(i) {
 
 // Sobrescreve globalmente para suportar ambos os modos
 window.dmSelectTile = function(i) {
-  if (dmMode === 'online') dmSelectTileOnline(i)
+  if (dmProcessing) return
+  if (dmMode === 'online') { dmProcessing=true; dmSelectTileOnline(i) }
   else _dmSelectOrig(i)
 }
 
 const _dmPlayOrig = dmPlay
 window.dmPlay = function(i, side) {
+  if (dmProcessing) return
   dmState    = dominoPlayTile(dmState, i, side, dmMyRole === 'p1')
   dmSelected = null
-  if (dmMode === 'online') dmSyncOnline(dmState)
+  if (dmMode === 'online') {
+    dmProcessing = true
+    dmSyncOnline(dmState).finally(() => dmProcessing = false)
+  }
   dmRender()
 }
 
@@ -3282,7 +3331,7 @@ function chLegalMoves(board, white, enPassant, castling) {
 
 // ── UI STATE ───────────────────────────────
 let chBoard, chTurn, chSelected, chMoves, chLegal
-let chEnPassant, chCastling, chMode, chMyColor, chStatus
+let chEnPassant, chCastling, chMode, chMyColor, chStatus, chProcessing=false
 
 function chInitState() {
   chBoard     = CH_INIT.map(r=>[...r])
@@ -3433,6 +3482,7 @@ function chRender() {
 }
 
 function chClick(r, c) {
+  if (chProcessing) return
   if (chTurn !== chMyColor) return
   const piece = chBoard[r][c]
 
@@ -3460,7 +3510,7 @@ function chClick(r, c) {
       chSelected  = null
       chTurn      = chTurn==='white'?'black':'white'
       chLegal     = chLegalMoves(chBoard, chTurn==='white', chEnPassant, chCastling)
-      if (chMode==='online') chSyncOnline()
+      if (chMode==='online') { chProcessing=true; chSyncOnline().finally(()=>chProcessing=false) }
       chRender()
       return
     }
@@ -3609,6 +3659,704 @@ async function chSyncOnline() {
     ...(isOver?{status:'finished',winner}:{}),
   }).eq('code', room.code)
 }
+
+
+// ══════════════════════════════════════════════
+// RANKING
+// ══════════════════════════════════════════════
+let rankCurrentTab = 'byts'
+
+function switchRankTab(tab) {
+  rankCurrentTab = tab
+  document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('rtab-' + tab).classList.add('active')
+  renderRanking()
+}
+
+function loadRanking() {
+  loadUsers()
+  renderRanking()
+}
+
+function renderRanking() {
+  const listEl = document.getElementById('rank-list')
+  if (!listEl) return
+
+  const users = Object.values(state.users)
+  if (!users.length) {
+    listEl.innerHTML = '<div class="empty-state">Nenhum primo cadastrado ainda! 😅</div>'
+    return
+  }
+
+  // Ordena por critério selecionado
+  const sorted = [...users].sort((a, b) => {
+    if (rankCurrentTab === 'byts')  return (b.byts  || 0) - (a.byts  || 0)
+    if (rankCurrentTab === 'wins')  return (b.wins  || 0) - (a.wins  || 0)
+    if (rankCurrentTab === 'level') return (calcLevel(b.xp || 0)) - (calcLevel(a.xp || 0))
+    return 0
+  })
+
+  const medals = ['🥇','🥈','🥉']
+  const isMe = u => u.email === state.user?.email
+
+  listEl.innerHTML = sorted.map((u, i) => {
+    const level  = calcLevel(u.xp || 0)
+    const rank   = rankName(level)
+    const value  = rankCurrentTab === 'byts'  ? (u.byts  || 0).toLocaleString('pt-BR') + ' 🪙'
+                 : rankCurrentTab === 'wins'  ? (u.wins  || 0) + ' vitórias'
+                 : 'Nível ' + level
+
+    const medal  = i < 3 ? medals[i] : `<span class="rank-num">${i+1}</span>`
+    const meTag  = isMe(u) ? ' rank-me' : ''
+
+    return `
+    <div class="rank-item${meTag}">
+      <div class="rank-pos">${medal}</div>
+      <div class="rank-avatar">${u.avatar || '😎'}</div>
+      <div class="rank-info">
+        <div class="rank-name">
+          ${u.nome}
+          ${isMe(u) ? '<span class="rank-you-badge">você</span>' : ''}
+        </div>
+        <div class="rank-rank-name">${rank}</div>
+      </div>
+      <div class="rank-value">${value}</div>
+    </div>`
+  }).join('')
+
+  // Card do usuário logado no topo se não estiver no top 3
+  const myPos = sorted.findIndex(u => u.email === state.user?.email)
+  if (myPos >= 3) {
+    const myCard = document.createElement('div')
+    myCard.className = 'rank-mypos'
+    myCard.innerHTML = `
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Sua posição</p>
+      <div class="rank-item rank-me" style="margin:0">
+        <div class="rank-pos"><span class="rank-num">${myPos+1}</span></div>
+        <div class="rank-avatar">${state.user.avatar}</div>
+        <div class="rank-info">
+          <div class="rank-name">${state.user.nome} <span class="rank-you-badge">você</span></div>
+          <div class="rank-rank-name">${rankName(calcLevel(state.user.xp||0))}</div>
+        </div>
+        <div class="rank-value">${
+          rankCurrentTab === 'byts'  ? (state.user.byts||0).toLocaleString('pt-BR')+' 🪙'
+        : rankCurrentTab === 'wins'  ? (state.user.wins||0)+' vitórias'
+        : 'Nível '+calcLevel(state.user.xp||0)
+        }</div>
+      </div>`
+    listEl.appendChild(myCard)
+  }
+}
+
+
+// ══════════════════════════════════════════════
+// UNO — ENGINE COMPLETO
+// ══════════════════════════════════════════════
+const UNO_COLORS  = ['red','green','blue','yellow']
+const UNO_NUMBERS = ['0','1','2','3','4','5','6','7','8','9']
+const UNO_SPECIALS= ['skip','reverse','+2']
+const UNO_WILDS   = ['wild','wild+4']
+
+function unoCreateDeck() {
+  const deck = []
+  for (const color of UNO_COLORS) {
+    // Um 0 por cor
+    deck.push({ color, value:'0', id: `${color}-0-${Math.random()}` })
+    // Dois de cada 1-9 e especiais
+    for (const v of [...UNO_NUMBERS.slice(1), ...UNO_SPECIALS]) {
+      deck.push({ color, value:v, id:`${color}-${v}-a-${Math.random()}` })
+      deck.push({ color, value:v, id:`${color}-${v}-b-${Math.random()}` })
+    }
+  }
+  // 4 wilds + 4 wild+4
+  for (let i=0;i<4;i++) {
+    deck.push({ color:'wild', value:'wild',   id:`wild-${i}` })
+    deck.push({ color:'wild', value:'wild+4', id:`wild4-${i}` })
+  }
+  return deck
+}
+
+function unoShuffle(arr) {
+  const a = [...arr]
+  for (let i=a.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]
+  }
+  return a
+}
+
+function unoDeal(playerNames) {
+  const deck = unoShuffle(unoCreateDeck())
+  const hands = {}
+  // 7 cartas por jogador
+  playerNames.forEach((name,i) => {
+    hands[name] = deck.splice(0,7)
+  })
+  // Primeira carta do descarte (não pode ser wild)
+  let topIdx = 0
+  while (deck[topIdx].color==='wild') topIdx++
+  const firstCard = deck.splice(topIdx,1)[0]
+
+  return {
+    hands,
+    deck,
+    discard: [firstCard],
+    currentColor: firstCard.color,
+    turn: playerNames[0],
+    direction: 1,        // 1=horário, -1=anti-horário
+    players: playerNames,
+    pendingDraw: 0,      // +2 ou +4 acumulado
+    pendingSkip: false,
+    winner: null,
+    lastAction: '',
+    unoCallers: {},      // quem já gritou UNO
+    avatars: {},
+  }
+}
+
+function unoCanPlay(card, topCard, currentColor, pendingDraw) {
+  if (pendingDraw > 0) {
+    // Só pode jogar +2 sobre +2, ou +4 sobre +4/+2
+    if (pendingDraw > 0 && topCard.value==='+2' && card.value==='+2') return true
+    if (pendingDraw > 0 && card.value==='wild+4') return true
+    return false
+  }
+  if (card.color==='wild') return true
+  if (card.color===currentColor) return true
+  if (card.value===topCard.value) return true
+  return false
+}
+
+function unoNextPlayer(players, current, direction) {
+  const idx = players.indexOf(current)
+  const next = ((idx + direction) % players.length + players.length) % players.length
+  return players[next]
+}
+
+function unoApplyCard(state, playerName, card, chosenColor=null) {
+  const s = JSON.parse(JSON.stringify(state))
+  const hand = s.hands[playerName]
+  const cardIdx = hand.findIndex(c=>c.id===card.id)
+  if (cardIdx===-1) return s
+  hand.splice(cardIdx,1)
+
+  s.discard.push(card)
+  if (s.discard.length > 30) s.discard = s.discard.slice(-20) // limita tamanho
+
+  let skipNext = false
+  let drawNext = 0
+
+  if (card.value==='+2') {
+    s.pendingDraw += 2
+    skipNext = true
+  } else if (card.value==='wild+4') {
+    s.pendingDraw += 4
+    skipNext = true
+    s.currentColor = chosenColor || UNO_COLORS[0]
+  } else if (card.value==='wild') {
+    s.currentColor = chosenColor || UNO_COLORS[0]
+  } else if (card.value==='skip') {
+    skipNext = true
+    s.currentColor = card.color
+  } else if (card.value==='reverse') {
+    s.direction *= -1
+    s.currentColor = card.color
+    if (s.players.length===2) skipNext = true // com 2 jogadores = skip
+  } else {
+    s.currentColor = card.color
+  }
+
+  s.lastAction = `${playerName} jogou ${unoCardLabel(card)}`
+
+  // Verifica UNO
+  if (hand.length===1) s.lastAction += ' — UNO! 🎴'
+  if (hand.length===0) { s.winner=playerName; return s }
+
+  // Avança turno
+  let nextPlayer = unoNextPlayer(s.players, playerName, s.direction)
+  if (skipNext) {
+    // Aplica draw ao próximo antes de pular
+    if (s.pendingDraw===0) {
+      nextPlayer = unoNextPlayer(s.players, nextPlayer, s.direction)
+    }
+  }
+  s.turn = nextPlayer
+  return s
+}
+
+function unoDrawCards(state, playerName) {
+  const s = JSON.parse(JSON.stringify(state))
+  const amount = s.pendingDraw > 0 ? s.pendingDraw : 1
+  s.pendingDraw = 0
+
+  // Reabastece deck se necessário
+  if (s.deck.length < amount) {
+    const top = s.discard.pop()
+    s.deck = [...s.deck, ...unoShuffle(s.discard)]
+    s.discard = [top]
+  }
+
+  const drawn = s.deck.splice(0, amount)
+  s.hands[playerName] = [...(s.hands[playerName]||[]), ...drawn]
+  s.lastAction = `${playerName} comprou ${amount} carta${amount>1?'s':''}`
+
+  if (amount===1) {
+    // Verifica se pode jogar a carta comprada
+    const newCard = drawn[0]
+    const top = s.discard[s.discard.length-1]
+    if (!unoCanPlay(newCard, top, s.currentColor, 0)) {
+      s.turn = unoNextPlayer(s.players, playerName, s.direction)
+    }
+    // Se pode, mantém turno para jogador decidir
+  } else {
+    s.turn = unoNextPlayer(s.players, playerName, s.direction)
+  }
+  return s
+}
+
+function unoCardLabel(card) {
+  const icons = { skip:'🚫', reverse:'🔄', '+2':'+2', wild:'🌈', 'wild+4':'🌈+4' }
+  return icons[card.value] || card.value
+}
+
+// ── UI STATE ──────────────────────────────────
+let unoState, unoMode, unoMyName, unoColorPicking=false, unoCardPending=null, unoProcessing=false
+const CPU_NAMES = ['🤖 CPU1','🤖 CPU2','🤖 CPU3','🤖 CPU4','🤖 CPU5']
+
+// ══════════════════════════════════════════════
+// UNO — MENU
+// ══════════════════════════════════════════════
+function buildUnoMenu() {
+  return `
+  <div class="ttt-menu">
+    <div class="ttt-menu-icon">🃏</div>
+    <h2 class="ttt-menu-title">Uno</h2>
+    <p class="ttt-menu-sub">Seja o primeiro a zerar sua mão!</p>
+    <button class="mode-btn mode-online" onclick="unoOnline()">
+      <span class="mode-icon">🌐</span>
+      <div class="mode-info">
+        <span class="mode-title">Sala Online</span>
+        <span class="mode-desc">Até 6 primos em tempo real</span>
+      </div>
+      <span class="mode-reward">+50 🪙</span>
+    </button>
+    <button class="mode-btn mode-cpu" onclick="showUnoCPUSetup()">
+      <span class="mode-icon">🤖</span>
+      <div class="mode-info">
+        <span class="mode-title">vs CPU</span>
+        <span class="mode-desc">Escolha quantos CPUs enfrentar</span>
+      </div>
+      <span class="mode-reward">+20 🪙</span>
+    </button>
+  </div>`
+}
+
+function showUnoCPUSetup() {
+  document.getElementById('game-content').innerHTML = `
+  <div class="ttt-menu">
+    <div style="font-size:48px">🤖</div>
+    <h2 class="ttt-menu-title">Quantos CPUs?</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%">
+      ${[1,2,3,4,5].map(n=>`
+        <button class="mode-btn mode-cpu" onclick="unoVsCPU(${n})" style="justify-content:center;text-align:center">
+          <div class="mode-info" style="align-items:center">
+            <span class="mode-title">${n} CPU${n>1?'s':''}</span>
+            <span class="mode-desc">${n+1} jogadores</span>
+          </div>
+        </button>`).join('')}
+    </div>
+    <button class="btn-secondary" onclick="buildUnoMenu();document.getElementById('game-content').innerHTML=buildUnoMenu()">← Voltar</button>
+  </div>`
+}
+
+// ══════════════════════════════════════════════
+// UNO — VS CPU
+// ══════════════════════════════════════════════
+function unoVsCPU(numCPUs) {
+  unoMode    = 'cpu'
+  unoMyName  = state.user.nome
+  const cpuNames = CPU_NAMES.slice(0, numCPUs)
+  const players  = [unoMyName, ...cpuNames]
+  unoState   = unoDeal(players)
+  unoState.avatars[unoMyName] = state.user.avatar
+  cpuNames.forEach(n => unoState.avatars[n]='🤖')
+  unoColorPicking = false
+  unoCardPending  = null
+  unoRender()
+  if (unoState.turn !== unoMyName) setTimeout(unoCPUTurn, 1000)
+}
+
+function unoRender() {
+  const content = document.getElementById('game-content')
+  if (!content) return
+  const s = unoState
+  if (!s) return
+
+  const myHand     = s.hands[unoMyName] || []
+  const isMyTurn   = s.turn === unoMyName
+  const topCard    = s.discard[s.discard.length-1]
+  const statusMsg  = s.winner
+    ? (s.winner===unoMyName?'🏆 Você venceu!':'😤 '+s.winner+' venceu!')
+    : isMyTurn ? (unoColorPicking?'🎨 Escolha a cor:':'🎯 Sua vez!')
+    : '⏳ Vez de '+s.turn+'...'
+
+  // Opponents hand counts
+  const opponents = s.players.filter(p=>p!==unoMyName)
+  const oppBars = opponents.map(p=>`
+    <div class="uno-opp ${s.turn===p?'uno-opp-active':''}">
+      <span class="uno-opp-av">${s.avatars[p]||'🙂'}</span>
+      <span class="uno-opp-name">${p.replace('🤖 ','')}</span>
+      <span class="uno-opp-count">${(s.hands[p]||[]).length}</span>
+      ${(s.hands[p]||[]).length===1?'<span class="uno-uno-badge">UNO!</span>':''}
+    </div>`).join('')
+
+  // Top card visual
+  const topColor = s.currentColor
+  const topHTML  = unoCardHTML(topCard, 'uno-card-top', topColor)
+
+  // My hand
+  const handHTML = myHand.map((card,i)=>{
+    const canPlay = isMyTurn && !unoColorPicking && unoCanPlay(card, topCard, s.currentColor, s.pendingDraw)
+    return `<div class="uno-card ${canPlay?'uno-playable':''} uno-card-${card.color}"
+      onclick="${canPlay?`unoPlayCard('${card.id}')`:''}"
+      style="${canPlay?'cursor:pointer':'cursor:not-allowed;opacity:0.55'}">
+      <span class="uno-card-tl">${unoCardLabel(card)}</span>
+      <span class="uno-card-center">${unoCardEmoji(card)}</span>
+      <span class="uno-card-br">${unoCardLabel(card)}</span>
+    </div>`
+  }).join('')
+
+  // Color picker
+  const colorPicker = unoColorPicking ? `
+    <div class="uno-color-picker">
+      <p style="font-size:13px;font-weight:700;text-align:center;margin-bottom:8px">Escolha a cor:</p>
+      <div class="uno-color-btns">
+        ${UNO_COLORS.map(c=>`
+          <button class="uno-color-btn uno-color-btn-${c}" onclick="unoPickColor('${c}')">
+            ${c==='red'?'🔴':c==='green'?'🟢':c==='blue'?'🔵':'🟡'}
+            ${c}
+          </button>`).join('')}
+      </div>
+    </div>` : ''
+
+  content.innerHTML = `
+  <div class="uno-wrap">
+    <div class="uno-opponents">${oppBars}</div>
+
+    <div class="uno-table">
+      <div class="uno-deck-pile" onclick="${isMyTurn&&!unoColorPicking?'unoDrawCard()':''}">
+        <div class="uno-card-back">🃏</div>
+        <span style="font-size:10px;color:var(--text-muted);margin-top:2px">${s.deck.length}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        ${topHTML}
+        <div class="uno-color-dot" style="background:${unoColorCSS(topColor)}"></div>
+      </div>
+    </div>
+
+    ${s.pendingDraw>0&&isMyTurn?`
+      <div class="uno-pending-draw">
+        ⚠️ Você precisa comprar <strong>${s.pendingDraw}</strong> cartas!
+        ${myHand.some(c=>unoCanPlay(c,topCard,s.currentColor,s.pendingDraw))
+          ? '<span style="font-size:11px;color:#4ade80"> Ou jogue um +2/+4 para acumular!</span>' : ''}
+      </div>` : ''}
+
+    <div class="uno-status ${s.winner?(s.winner===unoMyName?'uno-win':'uno-lose'):''}">${statusMsg}</div>
+    <div class="uno-action-log">${s.lastAction||''}</div>
+
+    ${colorPicker}
+
+    <div class="uno-hand-label">Sua mão (${myHand.length}) ${myHand.length===1?'<span class="uno-uno-badge">UNO!</span>':''}</div>
+    <div class="uno-hand" id="uno-hand">${handHTML}</div>
+
+    ${s.winner ? `
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn-primary" onclick="${unoMode==='cpu'?'unoVsCPU('+(s.players.length-1)+')':'unoOnline()'}" style="flex:1">Revanche 🃏</button>
+        <button class="btn-secondary" onclick="closeGame()" style="flex:1">Sair</button>
+      </div>` : ''}
+  </div>`
+
+  if (s.winner) {
+    const iWon = s.winner===unoMyName
+    if (iWon) addByts(unoMode==='online'?50:20, true)
+  }
+  if (unoMode==='cpu' && !s.winner && s.turn!==unoMyName) {
+    setTimeout(unoCPUTurn, 900)
+  }
+}
+
+function unoCardHTML(card, extraClass='', overrideColor=null) {
+  const color = overrideColor || card.color
+  return `<div class="uno-card ${extraClass} uno-card-${color}">
+    <span class="uno-card-tl">${unoCardLabel(card)}</span>
+    <span class="uno-card-center">${unoCardEmoji(card)}</span>
+    <span class="uno-card-br">${unoCardLabel(card)}</span>
+  </div>`
+}
+
+function unoCardEmoji(card) {
+  const map = { skip:'🚫', reverse:'🔄', '+2':'+2✨', wild:'🌈', 'wild+4':'🌈+4' }
+  return map[card.value] || card.value
+}
+
+function unoColorCSS(color) {
+  const map = { red:'#ef4444', green:'#22c55e', blue:'#3b82f6', yellow:'#f59e0b', wild:'#8b5cf6' }
+  return map[color] || '#666'
+}
+
+function unoPlayCard(cardId) {
+  if (unoProcessing) return
+  const s    = unoState
+  const hand = s.hands[unoMyName]
+  const card = hand.find(c=>c.id===cardId)
+  if (!card) return
+
+  if (card.color==='wild') {
+    unoCardPending  = card
+    unoColorPicking = true
+    unoRender()
+    return
+  }
+  unoState = unoApplyCard(s, unoMyName, card)
+  unoColorPicking = false
+  unoCardPending  = null
+  if (unoMode==='online') {
+    unoProcessing = true
+    unoSyncOnline().finally(() => unoProcessing = false)
+  } else unoRender()
+}
+
+function unoPickColor(color) {
+  if (!unoCardPending || unoProcessing) return
+  unoState = unoApplyCard(unoState, unoMyName, unoCardPending, color)
+  unoColorPicking = false
+  unoCardPending  = null
+  if (unoMode==='online') {
+    unoProcessing = true
+    unoSyncOnline().finally(() => unoProcessing = false)
+  } else unoRender()
+}
+
+function unoDrawCard() {
+  if (unoProcessing) return
+  unoState = unoDrawCards(unoState, unoMyName)
+  if (unoMode==='online') {
+    unoProcessing = true
+    unoSyncOnline().finally(() => unoProcessing = false)
+  } else unoRender()
+}
+
+// CPU IA
+function unoCPUTurn() {
+  const s = unoState
+  if (!s || s.winner || s.turn===unoMyName) return
+  const cpuName = s.turn
+  const hand    = s.hands[cpuName] || []
+  const topCard = s.discard[s.discard.length-1]
+
+  // Encontra cartas jogáveis
+  const playable = hand.filter(c=>unoCanPlay(c,topCard,s.currentColor,s.pendingDraw))
+
+  if (!playable.length) {
+    // Compra carta
+    unoState = unoDrawCards(unoState, cpuName)
+    unoRender()
+    if (unoState.turn!==unoMyName && !unoState.winner) setTimeout(unoCPUTurn,900)
+    return
+  }
+
+  // Prioridade: +4 > +2 > skip > reverse > wild > especial > número
+  const priority = ['wild+4','+2','skip','reverse','wild']
+  let card = null
+  for (const p of priority) {
+    card = playable.find(c=>c.value===p)
+    if (card) break
+  }
+  if (!card) card = playable[Math.floor(Math.random()*playable.length)]
+
+  // Escolhe cor aleatória para wilds
+  const chosenColor = card.color==='wild'
+    ? UNO_COLORS[Math.floor(Math.random()*UNO_COLORS.length)]
+    : null
+
+  unoState = unoApplyCard(unoState, cpuName, card, chosenColor)
+  unoRender()
+  if (unoState.turn!==unoMyName && !unoState.winner) setTimeout(unoCPUTurn,900)
+}
+
+// ══════════════════════════════════════════════
+// UNO — ONLINE
+// ══════════════════════════════════════════════
+async function unoOnline() {
+  showToast('Criando sala... ⏳')
+  const code = genCode()
+  unoMode   = 'online'
+  unoMyName = state.user.nome
+
+  const initBoard = {
+    phase: 'lobby',
+    players: [unoMyName],
+    avatars: { [unoMyName]: state.user.avatar },
+    hands: {},
+    deck: [],
+    discard: [],
+    currentColor: '',
+    turn: '',
+    direction: 1,
+    pendingDraw: 0,
+    winner: null,
+    lastAction: '',
+  }
+
+  const { data, error } = await sb.from('rooms').insert({
+    code, game:'uno', host_name:state.user.nome,
+    status:'waiting', board:initBoard, current_turn:state.user.nome,
+  }).select().maybeSingle()
+
+  if (error) { showToast('Erro ao criar sala 😢'); console.error(error); return }
+  state.currentRoom = data
+
+  document.getElementById('waiting-code').textContent = code
+  document.getElementById('game-overlay').classList.add('hidden')
+  document.getElementById('waiting-overlay').classList.remove('hidden')
+  document.querySelector('.waiting-title').textContent = 'Sala de Uno criada! 🃏'
+  document.querySelector('.waiting-sub').textContent   = 'Aguardando primos (máx 6)...'
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:`code=eq.${code}`}, payload=>{
+      state.currentRoom = payload.new
+      const room = payload.new
+      const bd   = room.board||{}
+
+      if (bd.phase==='lobby') {
+        unoUpdateWaitingList(bd)
+      }
+      if (bd.phase==='playing'||bd.phase==='finished') {
+        document.getElementById('waiting-overlay').classList.add('hidden')
+        document.getElementById('game-overlay').classList.remove('hidden')
+        document.getElementById('game-title-bar').textContent='🃏 Uno'
+        unoState = bd
+        unoRender()
+      }
+    }).subscribe()
+}
+
+function unoUpdateWaitingList(bd) {
+  const players = bd.players||[]
+  let el = document.querySelector('.waiting-players')
+  if (!el) {
+    const wrap = document.querySelector('.waiting-wrap')
+    if (!wrap) return
+    el = document.createElement('div')
+    el.className='waiting-players'
+    wrap.insertBefore(el, wrap.querySelector('button'))
+  }
+  el.innerHTML = `
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">${players.length}/6 primos</p>
+    <div class="td-players-row">
+      ${players.map(p=>`<div class="td-player-chip"><span>${bd.avatars?.[p]||'🙂'}</span><span>${p}</span></div>`).join('')}
+    </div>
+    ${players.length>=2&&unoMyName===bd.players[0]?`
+      <button class="btn-primary" style="margin-top:12px;max-width:220px" onclick="unoStartGame()">
+        🃏 Iniciar Uno (${players.length} jogadores)
+      </button>`:
+      players.length<2?`<p style="font-size:11px;color:var(--text-muted);margin-top:8px">Mínimo 2 primos para iniciar</p>`:
+      `<p style="font-size:12px;color:var(--text-secondary);margin-top:8px">Aguardando host iniciar...</p>`}
+  `
+}
+
+async function unoStartGame() {
+  const room = state.currentRoom
+  const bd   = room.board||{}
+  const newState = unoDeal(bd.players)
+  newState.avatars = bd.avatars||{}
+  newState.phase   = 'playing'
+
+  await sb.from('rooms').update({
+    board: newState,
+    status:'playing',
+    guest_name: bd.players.slice(1).join(', '),
+  }).eq('code', room.code)
+}
+
+async function unoJoinRoom(code) {
+  const { data:room, error } = await sb
+    .from('rooms').select('*').eq('code',code).eq('status','waiting').maybeSingle()
+  if (error||!room||room.game!=='uno') return false
+  if (room.host_name===state.user.nome) { showToast('Você criou esta sala!'); return true }
+
+  const bd = JSON.parse(JSON.stringify(room.board||{}))
+  if ((bd.players||[]).length>=6) { showToast('Sala cheia! (máx 6 primos)'); return true }
+  if ((bd.players||[]).includes(state.user.nome)) { showToast('Você já está nesta sala!'); return true }
+
+  bd.players = [...(bd.players||[]), state.user.nome]
+  bd.avatars  = { ...(bd.avatars||{}), [state.user.nome]:state.user.avatar }
+
+  await sb.from('rooms').update({ board:bd }).eq('code',code)
+
+  unoMode   = 'online'
+  unoMyName = state.user.nome
+  state.currentRoom = { ...room, board:bd }
+
+  document.getElementById('game-title-bar').textContent='🃏 Uno'
+  document.getElementById('game-overlay').classList.remove('hidden')
+  document.getElementById('game-content').innerHTML = `
+    <div class="td-lobby-wrap">
+      <div style="font-size:48px;text-align:center">🃏</div>
+      <h3 style="text-align:center;font-size:18px;font-weight:800">Sala: ${code}</h3>
+      <p style="text-align:center;font-size:13px;color:var(--text-secondary)">Aguardando host iniciar...</p>
+      <div class="td-players-grid">
+        ${bd.players.map(p=>`
+          <div class="td-player-card ${p===state.user.nome?'td-me':''}">
+            <span class="td-player-av">${bd.avatars?.[p]||'🙂'}</span>
+            <span class="td-player-nm">${p}</span>
+            ${p===bd.players[0]?'<span class="td-host-badge">Host</span>':''}
+          </div>`).join('')}
+      </div>
+    </div>`
+
+  if (state.realtimeChannel) sb.removeChannel(state.realtimeChannel)
+  state.realtimeChannel = sb
+    .channel('room-'+code)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:`code=eq.${code}`}, payload=>{
+      state.currentRoom = payload.new
+      const bd2 = payload.new.board||{}
+      if (bd2.phase==='lobby') {
+        document.getElementById('game-content').innerHTML = `
+          <div class="td-lobby-wrap">
+            <div style="font-size:48px;text-align:center">🃏</div>
+            <h3 style="text-align:center;font-size:18px;font-weight:800">Sala: ${code}</h3>
+            <div class="td-players-grid">
+              ${(bd2.players||[]).map(p=>`
+                <div class="td-player-card ${p===state.user.nome?'td-me':''}">
+                  <span class="td-player-av">${bd2.avatars?.[p]||'🙂'}</span>
+                  <span class="td-player-nm">${p}</span>
+                  ${p===(bd2.players||[])[0]?'<span class="td-host-badge">Host</span>':''}
+                </div>`).join('')}
+            </div>
+          </div>`
+      }
+      if (bd2.phase==='playing'||bd2.phase==='finished') {
+        unoState = bd2
+        unoRender()
+      }
+    }).subscribe()
+  return true
+}
+
+async function unoSyncOnline() {
+  const room = state.currentRoom
+  const s    = unoState
+  await sb.from('rooms').update({
+    board: { ...s, phase: s.winner?'finished':'playing' },
+    current_turn: s.turn,
+    status: s.winner?'finished':'playing',
+    winner: s.winner||null,
+  }).eq('code', room.code)
+  unoRender()
+}
+
 
 // ══════════════════════════════════════════════
 // LOJA

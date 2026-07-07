@@ -2161,3 +2161,343 @@ body {
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* ══ RANKING ══ */
+.rank-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.rank-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+.rank-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.rank-tabs {
+  display: flex;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 3px;
+  margin-top: 8px;
+}
+.rank-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  padding: 8px 4px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.rank-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Lista */
+.rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  transition: border-color var(--transition);
+}
+.rank-item.rank-me {
+  border-color: var(--primary);
+  background: rgba(99,102,241,0.08);
+}
+.rank-pos {
+  width: 28px;
+  text-align: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.rank-num {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+.rank-avatar {
+  font-size: 32px;
+  width: 40px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.rank-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rank-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rank-rank-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.rank-you-badge {
+  background: var(--primary);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+.rank-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent-byts);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Top 3 destaque */
+.rank-list .rank-item:nth-child(1) { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.05); }
+.rank-list .rank-item:nth-child(2) { border-color: rgba(192,192,192,0.4); background: rgba(192,192,192,0.04); }
+.rank-list .rank-item:nth-child(3) { border-color: rgba(205,127,50,0.4); background: rgba(205,127,50,0.04); }
+
+/* Minha posição flutuante no fim */
+.rank-mypos {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Nav com 5 itens */
+.bottom-nav { justify-content: space-around; }
+
+/* ══ UNO ══ */
+.uno-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+  min-height: 100%;
+}
+
+/* Oponentes */
+.uno-opponents {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.uno-opponents::-webkit-scrollbar { display: none; }
+.uno-opp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  min-width: 64px;
+  flex-shrink: 0;
+  transition: border-color var(--transition);
+  position: relative;
+}
+.uno-opp.uno-opp-active { border-color: var(--primary); }
+.uno-opp-av   { font-size: 20px; }
+.uno-opp-name { font-size: 10px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; max-width: 60px; overflow: hidden; text-overflow: ellipsis; }
+.uno-opp-count { font-size: 18px; font-weight: 900; color: var(--text-primary); }
+.uno-uno-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 5px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.05em;
+}
+
+/* Mesa */
+.uno-table {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 8px 0;
+}
+.uno-deck-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.uno-card-back {
+  width: 56px;
+  height: 84px;
+  background: linear-gradient(135deg, #1e1e3f, #3730a3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border: 2px solid rgba(255,255,255,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: transform var(--transition);
+}
+.uno-deck-pile:active .uno-card-back { transform: scale(0.93); }
+
+.uno-color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Cartas */
+.uno-card {
+  width: 56px;
+  height: 84px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px;
+  position: relative;
+  user-select: none;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: transform 150ms, box-shadow 150ms;
+  flex-shrink: 0;
+}
+.uno-card-top {
+  width: 70px;
+  height: 100px;
+}
+.uno-card-tl  { font-size: 11px; font-weight: 900; align-self: flex-start; line-height: 1; }
+.uno-card-center { font-size: 22px; line-height: 1; }
+.uno-card-br  { font-size: 11px; font-weight: 900; align-self: flex-end; transform: rotate(180deg); line-height: 1; }
+
+/* Cores das cartas */
+.uno-card-red    { background: linear-gradient(135deg,#ef4444,#b91c1c); color: white; }
+.uno-card-green  { background: linear-gradient(135deg,#22c55e,#15803d); color: white; }
+.uno-card-blue   { background: linear-gradient(135deg,#3b82f6,#1d4ed8); color: white; }
+.uno-card-yellow { background: linear-gradient(135deg,#f59e0b,#d97706); color: #1a1a1a; }
+.uno-card-wild   { background: linear-gradient(135deg,#7c3aed,#db2777,#f59e0b,#22c55e); color: white; }
+
+.uno-card.uno-playable {
+  box-shadow: 0 0 0 2px #fff, 0 4px 16px rgba(255,255,255,0.3);
+  transform: translateY(-6px);
+}
+.uno-card.uno-playable:active { transform: translateY(-2px) scale(0.95); }
+
+/* Mão do jogador */
+.uno-hand-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.uno-hand {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 12px 4px 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  align-items: flex-end;
+}
+.uno-hand::-webkit-scrollbar { display: none; }
+
+/* Status e log */
+.uno-status {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-height: 20px;
+}
+.uno-status.uno-win  { color: #22c55e; }
+.uno-status.uno-lose { color: #ef4444; }
+.uno-action-log {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  min-height: 16px;
+}
+
+/* Pending draw aviso */
+.uno-pending-draw {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f87171;
+  text-align: center;
+}
+
+/* Color picker */
+.uno-color-picker {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+}
+.uno-color-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.uno-color-btn {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform var(--transition), opacity var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  text-transform: capitalize;
+}
+.uno-color-btn:active { transform: scale(0.94); }
+.uno-color-btn-red    { background: #ef4444; color: white; }
+.uno-color-btn-green  { background: #22c55e; color: white; }
+.uno-color-btn-blue   { background: #3b82f6; color: white; }
+.uno-color-btn-yellow { background: #f59e0b; color: #1a1a1a; }
